@@ -1,0 +1,20 @@
+# Ignore Data Files (ไฟล์ข้อมูลห้ามขึ้น)
+data/
+*.csv
+*.xlsx
+*.json
+
+# Ignore System Files
+__pycache__/
+*.pyc
+.DS_Store
+
+# Ignore Environment & Config (รหัสผ่านห้ามขึ้น)
+venv/
+env/
+.env
+credentials.json
+
+# Ignore IDE settings
+.vscode/
+.idea/
