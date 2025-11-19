@@ -19,8 +19,10 @@ scikit-learn
 scipy
 
 # --- Visualization & Geospatial ---
+streamlit
 matplotlib
 seaborn
 geopandas
 folium                   # แนะนำเพิ่ม! เอาไว้พลอตแผนที่ Interactive สวยๆ (ทำงานคู่ Geopandas ดีมาก)
 mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
+plotly
