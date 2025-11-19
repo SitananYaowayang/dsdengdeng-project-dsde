@@ -1,144 +1,145 @@
 import time
-import random
 import pandas as pd
 import undetected_chromedriver as uc
-from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-# ฟังก์ชันสำหรับดึงข้อมูลจาก 1 หน้าประกาศ
-def scrape_condo_detail(driver, url):
-    print(f"กำลังดึงข้อมูล: {url}")
-    driver.get(url)
-    
-    # Random delay เล็กน้อยเพื่อให้เหมือนคน
-    time.sleep(random.uniform(3, 5))
-    
-    # -------------------------------------------------------
-    # 1. กดปุ่ม "ข้อมูลเพิ่มเติม..." (ถ้ามี)
-    # -------------------------------------------------------
-    try:
-        # หาปุ่มที่มี class font_title_more
-        read_more_btn = driver.find_element(By.CSS_SELECTOR, ".font_title_more")
-        
-        # ใช้ JavaScript Click เพื่อความชัวร์ (บางทีมีอะไรบัง Click ธรรมดาจะ error)
-        driver.execute_script("arguments[0].click();", read_more_btn)
-        print("-> กดปุ่ม 'ข้อมูลเพิ่มเติม' สำเร็จ")
-        time.sleep(1) # รอข้อความขยาย
-    except Exception:
-        # ถ้าหาปุ่มไม่เจอ หรือกดไม่ได้ (เช่น ข้อความสั้นอยู่แล้ว) ก็ปล่อยผ่าน
-        pass
-
-    # -------------------------------------------------------
-    # 2. เริ่มดูดข้อมูลด้วย BeautifulSoup
-    # -------------------------------------------------------
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    data = {}
-
-    # --- A. Title ---
-    try:
-        # ตัด class ยาวๆ ออก ใช้แค่ id ก็ระบุได้แม่นยำแล้วครับ
-        data['title'] = soup.select_one('#title_modal_more').get_text(strip=True)
-    except:
-        data['title'] = None
-
-    # --- B. Description ---
-    try:
-        # ตัด col-lg... ออก ใช้แค่ class หลักที่เป็นชื่อเฉพาะ
-        data['description'] = soup.select_one('.box_show_detail_descript').get_text(strip=True)
-    except:
-        data['description'] = None
-
-    # --- C. Price & Price per Sqm ---
-    try:
-        price_box = soup.select_one('.box_price_mb')
-        
-        # Price: หา span class price-detail -> เข้าไปเอา b -> เอา text
-        # ผลลัพธ์จะเป็น "฿10,500,000" หรือ "10,500,000"
-        price_raw = price_box.select_one('.price-detail b').get_text(strip=True)
-        data['price'] = price_raw.replace('฿', '').replace(',', '') # Clean ให้เป็นตัวเลขล้วน
-        
-        # Price per Sqm: หา class price_cal_area_text_modal
-        pp_sqm_raw = price_box.select_one('.price_cal_area_text_modal').get_text(strip=True)
-        # ผลลัพธ์จะเป็น "(229,458 บ./ตร.ม.)" -> ตัดวงเล็บและข้อความออก
-        data['price_per_sqm'] = pp_sqm_raw.replace('(', '').replace(')', '').replace('บ./ตร.ม.', '').replace(',', '').strip()
-        
-    except:
-        data['price'] = None
-        data['price_per_sqm'] = None
-
-    # --- D. Loop หาข้อมูลใน List (พื้นที่, ชั้น, ห้องนอน, ห้องน้ำ) ---
-    # ข้อมูลพวกนี้อยู่ในโครงสร้างคล้ายกัน คือเป็น row > title | text
-    # เราจะวน Loop หาเพื่อความแม่นยำ
-    
-    rows = soup.select('.detail-list-property') # หาแถวรายการทั้งหมด
-    
-    # ตั้งค่า Default เป็น None ไว้ก่อน
-    data['usable_area'] = None
-    data['floor'] = None
-    data['bedroom'] = None
-    data['restroom'] = None
-
+# --- Helper Function: หาค่าจาก list รายละเอียด (เช่น ชั้น, พื้นที่) ---
+def get_property_value(soup, keyword):
+    """
+    ค้นหา div ที่มี class 'detail-list-property'
+    แล้วหา span ที่มี keyword ที่กำหนด
+    จากนั้นคืนค่า text ของ span ตัวถัดไป (ที่เป็นค่าข้อมูล)
+    """
+    rows = soup.find_all("div", class_="detail-list-property")
     for row in rows:
-        try:
-            title_span = row.select_one('.detail-property-list-title')
-            value_span = row.select_one('.detail-property-list-text')
-            
-            if not title_span or not value_span:
-                continue
-                
-            title_text = title_span.get_text(strip=True)
-            value_text = value_span.get_text(strip=True)
-            
-            # เช็คเงื่อนไขตาม Keyword
-            if "พื้นที่ใช้สอย" in title_text:
-                data['usable_area'] = value_text.replace('ตร.ม.', '').strip()
-                
-            elif "ชั้นของห้อง" in title_text or "ชั้นที่" in title_text:
-                data['floor'] = value_text
-                
-            elif "ห้องนอน" in title_text:
-                data['bedroom'] = value_text
-            
-            # แก้ไข: ใน Prompt คุณเขียน "ห้องนอน" ซ้ำในส่วน restroom 
-            # ผมแก้ Logic เป็น "ห้องน้ำ" ให้นะครับ เพื่อความถูกต้อง
-            elif "ห้องน้ำ" in title_text: 
-                data['restroom'] = value_text
-                
-        except:
-            continue
+        title_span = row.find("span", class_="detail-property-list-title")
+        if title_span and keyword in title_span.get_text(strip=True):
+            value_span = row.find("span", class_="detail-property-list-text")
+            if value_span:
+                return value_span.get_text(strip=True)
+    return None
 
-    data['url'] = url
-    return data
-
-# ==========================================
-# Main Execution
-# ==========================================
-if __name__ == "__main__":
-    # ตั้งค่า Driver
+def scrape_living_insider():
+    # 1. ตั้งค่า Driver (ใช้ undetected เพื่อหลบ Bot)
     options = uc.ChromeOptions()
-    # options.add_argument('--headless') # ปิดบรรทัดนี้ถ้าอยากเห็นหน้าจอ browser
+    # options.add_argument('--headless') # ช่วงแรกแนะนำให้ปิดบรรทัดนี้ เพื่อดูการทำงาน
     driver = uc.Chrome(options=options)
 
-    # ตัวอย่าง URL คอนโด (ใส่ URL จริงลงไปลองเทสตรงนี้)
-    test_urls = [
-        "https://www.livinginsider.com/livingdetail/condo/id/123456.html", # <--- เปลี่ยนเป็น URL จริงที่ต้องการเทส
-    ]
+    # URL หน้ารวมประกาศ (ตามที่คุณส่งมา)
+    main_url = "https://www.livinginsider.com/searchword/Condo/Buysell/1/รวมประกาศ-ขาย-คอนโด.html"
     
-    # *หมายเหตุ: ปกติคุณต้องเขียน Loop ดึง URL จากหน้า Search มาใส่ใน list นี้ก่อน
+    print(f"🚀 กำลังเข้าสู่หน้าหลัก: {main_url}")
+    driver.get(main_url)
+    time.sleep(5) # รอเว็บโหลด
+
+    # เก็บ Link ของแต่ละคอนโด
+    all_links = []
+    soup_main = BeautifulSoup(driver.page_source, 'html.parser')
     
-    results = []
+    # หา class "item-desc" ตามที่บอก
+    items = soup_main.find_all('div', class_='item-desc')
     
-    try:
-        for url in test_urls:
-            if "livinginsider.com" in url: # เช็คว่าเป็น Link จริงๆ ไม่ใช่ Link มั่ว
-                info = scrape_condo_detail(driver, url)
-                print(info)
-                results.append(info)
-    finally:
-        driver.quit()
+    print(f"🔎 เจอประกาศทั้งหมด {len(items)} รายการในหน้านี้")
+    
+    for item in items:
+        # หา <a> ที่ซ่อนอยู่ใน item-desc (ปกติจะเป็น tag a ที่คลุม title หรือกดเข้าไปได้)
+        a_tag = item.find_parent('a') # หรือหา a ที่อยู่ใน div นี้
+        if not a_tag:
+            a_tag = item.find('a')
+            
+        if a_tag and 'href' in a_tag.attrs:
+            all_links.append(a_tag['href'])
+
+    # ตัวแปรเก็บข้อมูลทั้งหมด
+    data_list = []
+
+    # 2. Loop เข้าไปทีละ Link
+    # (Demo: ลองดึงแค่ 5 อันแรกพอนะครับ ถ้าจะเอาจริงให้ลบ [:5] ออก)
+    for i, link in enumerate(all_links[:5]): 
+        full_url = link if link.startswith("http") else f"https://www.livinginsider.com{link}"
+        print(f"[{i+1}/{len(all_links)}] กำลังดึงข้อมูล: {full_url}")
         
-        # Save ลง Excel/CSV
-        if results:
-            df = pd.DataFrame(results)
-            df.to_csv('living_insider_data.csv', index=False, encoding='utf-8-sig')
-            print("Saved to CSV successfully.")
+        try:
+            driver.get(full_url)
+            time.sleep(3) # รอหน้าโหลด
+
+            # --- Step: กดปุ่ม "ข้อมูลเพิ่มเติม..." ---
+            try:
+                # พยายามหาปุ่มและกด (ถ้ามี)
+                # ใช้ XPath หา span ที่มี text 'ข้อมูลเพิ่มเติม...' ภายใต้ class font_title_more
+                more_btn = WebDriverWait(driver, 3).until(
+                    EC.element_to_be_clickable((By.XPATH, "//span[contains(@class, 'font_title_more')]//span[contains(text(), 'ข้อมูลเพิ่มเติม')]"))
+                )
+                more_btn.click()
+                time.sleep(1) # รอ text ขยายออกมา
+            except Exception:
+                pass # ถ้าไม่มีปุ่ม หรือกดไม่ได้ ก็ปล่อยผ่าน (บางที text มันมาครบแล้วแค่ซ่อน css)
+
+            # --- Step: ดึงข้อมูลด้วย BeautifulSoup ---
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            
+            # 1. Title
+            title_div = soup.find("div", id="title_modal_more")
+            title = title_div.get_text(strip=True) if title_div else None
+
+            # 2. Description (ตัด class ยาวๆ ออก เหลือแค่ตัวหลัก)
+            desc_div = soup.find("div", class_="box_show_detail_descript")
+            description = desc_div.get_text(strip=True) if desc_div else None
+
+            # 3. Price
+            price_div = soup.find("div", class_="box_price_mb")
+            price = None
+            if price_div:
+                # หา <b> ที่อยู่ใน span class price-detail
+                price_span = price_div.find("span", class_="price-detail")
+                if price_span:
+                    price_b = price_span.find("b")
+                    if price_b:
+                        price = price_b.get_text(strip=True) # จะได้ "฿105,000,000"
+
+            # 4. Price per Sq.m.
+            price_sqm = None
+            if price_div:
+                # หา class เฉพาะเจาะจง "price_cal_area_text_modal"
+                sqm_span = price_div.find("span", class_="price_cal_area_text_modal")
+                if sqm_span:
+                    price_sqm = sqm_span.get_text(strip=True) # จะได้ "(229,458 บ./ตร.ม.)"
+
+            # 5. ใช้ Helper Function ดึงพวก list property
+            usable_area = get_property_value(soup, "พื้นที่ใช้สอย")
+            floor = get_property_value(soup, "ชั้น") # ใช้คำสั้นๆ ว่า "ชั้น" จะคลุมทั้ง "ชั้นที่" และ "ชั้นของห้อง"
+            bedroom = get_property_value(soup, "ห้องนอน")
+            restroom = get_property_value(soup, "ห้องน้ำ") # **แก้จาก ห้องนอน เป็น ห้องน้ำ**
+
+            # เก็บลง Dictionary
+            row_data = {
+                "URL": full_url,
+                "Title": title,
+                "Price": price,
+                "Price_Per_Sqm": price_sqm,
+                "Usable_Area": usable_area,
+                "Floor": floor,
+                "Bedroom": bedroom,
+                "Restroom": restroom,
+                "Description": description # อันนี้ยาวหน่อย ระวังตอนดูใน Excel
+            }
+            
+            data_list.append(row_data)
+            print(f"   ✅ ได้ข้อมูล: {title[:30]}... | ราคา: {price}")
+
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            continue
+
+    driver.quit()
+
+    # 3. Save to CSV
+    df = pd.DataFrame(data_list)
+    df.to_csv("living_insider_data.csv", index=False, encoding="utf-8-sig")
+    print("\n🎉 เสร็จสิ้น! บันทึกไฟล์ living_insider_data.csv เรียบร้อย")
+
+if __name__ == "__main__":
+    scrape_living_insider()
