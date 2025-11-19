@@ -12,7 +12,7 @@ undetected-chromedriver  # ตัวช่วยให้ Selenium เนีย�
 
 # --- Big Data & Pipeline ---
 pyspark
-apache-airflow           # *หมายเหตุ: บน Windows ติดตั้งยาก แนะนำให้ใช้ Docker หรือ WSL
+          # *หมายเหตุ: บน Windows ติดตั้งยาก แนะนำให้ใช้ Docker หรือ WSL
 
 # --- AI / Machine Learning ---
 scikit-learn
