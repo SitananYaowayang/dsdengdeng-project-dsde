@@ -54,12 +54,12 @@ def reverse_geocode_coords(coords):
     แปลงพิกัด (Lat, Lng) เป็นข้อมูลที่อยู่ (แขวง, เขต, จังหวัด, รหัสไปรษณีย์) โดยใช้ Nominatim
     """
     if not coords:
-        return None, None, None, None # sub_district, district, province, postcode
+        return None, None, None, None, None # แก้ไขให้ return ค่าครบตามจำนวนตัวรับ
 
     try:
         latitude, longitude = map(str.strip, coords.split(','))
     except ValueError:
-        return None, None, None, None
+        return None, None, None, None, None
 
     # ตั้งค่า Geocoder
     geolocator = Nominatim(user_agent="living_insider_scraper_v1", timeout=10)
@@ -69,6 +69,7 @@ def reverse_geocode_coords(coords):
         location = geolocator.reverse((latitude, longitude), exactly_one=True, language='th')
         
         if location and location.raw and 'address' in location.raw:
+            full_address = location.address
             address_parts = location.raw['address']
             
             # การดึงข้อมูลที่ละเอียดขึ้นอยู่กับโครงสร้างที่ Nominatim คืนมา 
@@ -77,7 +78,7 @@ def reverse_geocode_coords(coords):
             province = address_parts.get('city')
             postcode = address_parts.get('postcode')
             
-            return sub_district, district, province, postcode
+            return sub_district, district, province, postcode , full_address
             
     except (GeocoderTimedOut, GeocoderServiceError) as e:
         print(f"    ⚠️ Reverse Geocoding Error: {e}. Waiting 2 seconds...")
@@ -85,7 +86,7 @@ def reverse_geocode_coords(coords):
     except Exception as e:
         print(f"    ⚠️ Unexpected Reverse Geocoding Error: {e}")
         
-    return None, None, None, None 
+    return None, None, None, None, None
 
 def scrape_living_insider():
     # 1. ตั้งค่า Driver
@@ -145,6 +146,7 @@ def scrape_living_insider():
             full_url = link if link.startswith("http") else f"https://www.livinginsider.com{link}"
             print(f"\n--- [หน้า {page}/{END_PAGE} | รายการ {i+1}/{ITEMS_PER_PAGE}] กำลังดึงข้อมูล: {full_url} ---")
             
+            # Reset ตัวแปรให้เป็น None ทุกรอบ
             coords = None
             address_map = None 
             sub_district = None
@@ -191,12 +193,16 @@ def scrape_living_insider():
                         if address_div:
                             address_map = address_div.get_text(strip=True)
                         
-                        print(f"   📍 Coords: {coords} | 🏠 Address (Map): {address_map}")
+                        print(f"   📍 Coords: {coords} | 🏠 Address (Map): {address_map}")
                         
-                        # 7. Reverse Geocoding
-                        if coords:
-                            sub_district, district, province, postcode = reverse_geocode_coords(coords)
-                            print(f"   📌 Geocoded: จว.={province}, เขต={district}, รหัส={postcode}")
+                        # 7. Reverse Geocoding (แก้ไข: เช็คทั้ง coords และ address_map)
+                        # ถ้า address_map ไม่มี (Google Maps หาไม่เจอหรือโหลดไม่ทัน) จะไม่ทำ Geocoding
+                        # ทำให้ full_address เป็น None ตามที่ต้องการ
+                        if coords and address_map:
+                            sub_district, district, province, postcode , full_address = reverse_geocode_coords(coords)
+                            print(f"   📌 Geocoded: จว.={province}, เขต={district}, รหัส={postcode}")
+                        else:
+                            print("   ⚠️ Address Map is empty/null. Skipping geocoding. Full address set to null.")
                         
                         # 8. สลับกลับไปหน้าประกาศเดิม (สำคัญมาก!)
                         driver.get(full_url)
@@ -204,10 +210,10 @@ def scrape_living_insider():
                             EC.presence_of_element_located((By.CLASS_NAME, "text_project_detail_green"))
                         )
                     else:
-                        print("   ⚠️ ไม่พบแอตทริบิวต์ href ในปุ่มแผนที่")
+                        print("   ⚠️ ไม่พบแอตทริบิวต์ href ในปุ่มแผนที่")
 
                 except Exception as e:
-                    print(f"   ❌ Error ในการดึง Coords/Address: {e}")
+                    print(f"   ❌ Error ในการดึง Coords/Address: {e}")
                     try:
                         driver.get(full_url) # พยายามกลับหน้าหลักถ้าเกิด error
                     except:
@@ -269,28 +275,29 @@ def scrape_living_insider():
                 
                 # เก็บลง Dictionary
                 row_data = {
-                    "URL": full_url,
-                    "Title": title,
-                    "Publish_Date": publish_date, 
-                    "Price": price,
-                    "Price_Per_Sqm": price_sqm,
-                    "Usable_Area": usable_area,
-                    "Floor": floor,
-                    "Bedroom": bedroom,
-                    "Restroom": restroom,
-                    "Coords": coords,   
-                    "Address_Map": address_map, 
-                    "Sub_District": sub_district, 
-                    "District": district,    
-                    "Province": province,    
-                    "Postcode": postcode,    
+                    "url": full_url,
+                    "title": title,
+                    "publish_date": publish_date, 
+                    "price": price,
+                    "price_per_sqm": price_sqm,
+                    "usable_area": usable_area,
+                    "floor": floor,
+                    "bedroom": bedroom,
+                    "restroom": restroom,
+                    "coords": coords,   
+                    # "address_map": address_map,
+                    "address": full_address, # จะเป็น Null ถ้า address_map เป็น Null
+                    "sub_district": sub_district, 
+                    "district": district,    
+                    "province": province,    
+                    "postcode": postcode,    
                 }
                 
                 data_list.append(row_data)
-                print(f"   ✅ ได้ข้อมูล: {title[:30]}... | จว.: {province} | เขต: {district}")
+                print(f"   ✅ ได้ข้อมูล: {title[:30]}... | จว.: {province} | เขต: {district}")
 
             except Exception as e:
-                print(f"   ❌ Error ในการดึงข้อมูล {full_url} โดยรวม: {e}")
+                print(f"   ❌ Error ในการดึงข้อมูล {full_url} โดยรวม: {e}")
                 continue
 
     driver.quit()
