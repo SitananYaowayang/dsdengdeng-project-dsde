@@ -6,6 +6,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import re 
+from geopy.geocoders import Nominatim 
+from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 # --- Helper Function: หาค่าจาก list รายละเอียด (เช่น ชั้น, พื้นที่) ---
 def get_property_value(soup, keyword):
@@ -46,6 +48,45 @@ def extract_coords_from_google_maps_url(url):
         return f"{latitude},{longitude}"
     return None
 
+# --- Helper Function: Reverse Geocoding ---
+def reverse_geocode_coords(coords):
+    """
+    แปลงพิกัด (Lat, Lng) เป็นข้อมูลที่อยู่ (แขวง, เขต, จังหวัด, รหัสไปรษณีย์) โดยใช้ Nominatim
+    """
+    if not coords:
+        return None, None, None, None # sub_district, district, province, postcode
+
+    try:
+        latitude, longitude = map(str.strip, coords.split(','))
+    except ValueError:
+        return None, None, None, None
+
+    # ตั้งค่า Geocoder
+    geolocator = Nominatim(user_agent="living_insider_scraper_v1", timeout=10)
+    
+    try:
+        # ใช้ภาษาไทยในการค้นหา
+        location = geolocator.reverse((latitude, longitude), exactly_one=True, language='th')
+        
+        if location and location.raw and 'address' in location.raw:
+            address_parts = location.raw['address']
+            
+            # การดึงข้อมูลที่ละเอียดขึ้นอยู่กับโครงสร้างที่ Nominatim คืนมา 
+            sub_district = address_parts.get('quarter')
+            district = address_parts.get('suburb')
+            province = address_parts.get('city')
+            postcode = address_parts.get('postcode')
+            
+            return sub_district, district, province, postcode
+            
+    except (GeocoderTimedOut, GeocoderServiceError) as e:
+        print(f"    ⚠️ Reverse Geocoding Error: {e}. Waiting 2 seconds...")
+        time.sleep(2)
+    except Exception as e:
+        print(f"    ⚠️ Unexpected Reverse Geocoding Error: {e}")
+        
+    return None, None, None, None 
+
 def scrape_living_insider():
     # 1. ตั้งค่า Driver
     options = uc.ChromeOptions()
@@ -55,9 +96,10 @@ def scrape_living_insider():
     # Base URL สำหรับการทำ Pagination
     base_url = "https://www.livinginsider.com/searchword/Condo/Buysell/{}/รวมประกาศ-ขาย-คอนโด.html"
     
-    # กำหนดช่วงหน้าและจำนวนรายการต่อหน้า
+    # 🔴 ปรับการตั้งค่าตามที่ร้องขอ 🔴
     START_PAGE = 1
-    END_PAGE = 2
+    END_PAGE = 2      # <--- ดึงถึงหน้าที่ 2
+    ITEMS_PER_PAGE = 3  # <--- ดึงหน้าละ 3 รายการ
     
     data_list = []
 
@@ -99,11 +141,17 @@ def scrape_living_insider():
         print(f"🔎 เจอประกาศทั้งหมด {len(all_links)} รายการในหน้านี้")
         
         # 3. Loop เข้าไปทีละ Link (จำกัดเพียง ITEMS_PER_PAGE รายการ)
-        for i, link in enumerate(all_links): 
+        for i, link in enumerate(all_links[:ITEMS_PER_PAGE]): 
             full_url = link if link.startswith("http") else f"https://www.livinginsider.com{link}"
+            print(f"\n--- [หน้า {page}/{END_PAGE} | รายการ {i+1}/{ITEMS_PER_PAGE}] กำลังดึงข้อมูล: {full_url} ---")
             
             coords = None
-            address = None 
+            address_map = None 
+            sub_district = None
+            district = None
+            province = None
+            postcode = None
+            full_address = None
             
             try:
                 driver.get(full_url)
@@ -141,11 +189,16 @@ def scrape_living_insider():
                             address_div = soup_map.find("div", class_="fontBodyMedium") # Fallback
                             
                         if address_div:
-                            address = address_div.get_text(strip=True)
+                            address_map = address_div.get_text(strip=True)
                         
-                        print(f"   📍 Coords: {coords} | 🏠 Address: {address}")
+                        print(f"   📍 Coords: {coords} | 🏠 Address (Map): {address_map}")
                         
-                        # 7. สลับกลับไปหน้าประกาศเดิม (สำคัญมาก!)
+                        # 7. Reverse Geocoding
+                        if coords:
+                            sub_district, district, province, postcode = reverse_geocode_coords(coords)
+                            print(f"   📌 Geocoded: จว.={province}, เขต={district}, รหัส={postcode}")
+                        
+                        # 8. สลับกลับไปหน้าประกาศเดิม (สำคัญมาก!)
                         driver.get(full_url)
                         WebDriverWait(driver, 10).until(
                             EC.presence_of_element_located((By.CLASS_NAME, "text_project_detail_green"))
@@ -226,11 +279,15 @@ def scrape_living_insider():
                     "Bedroom": bedroom,
                     "Restroom": restroom,
                     "Coords": coords,   
-                    "Address": address, 
+                    "Address_Map": address_map, 
+                    "Sub_District": sub_district, 
+                    "District": district,    
+                    "Province": province,    
+                    "Postcode": postcode,    
                 }
                 
                 data_list.append(row_data)
-                print(f"   ✅ ได้ข้อมูล: {title[:30]}... | ราคา: {price} | ที่อยู่: {address[:20]}...")
+                print(f"   ✅ ได้ข้อมูล: {title[:30]}... | จว.: {province} | เขต: {district}")
 
             except Exception as e:
                 print(f"   ❌ Error ในการดึงข้อมูล {full_url} โดยรวม: {e}")
