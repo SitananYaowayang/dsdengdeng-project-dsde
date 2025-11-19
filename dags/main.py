@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     # ตัวอย่าง URL คอนโด (ใส่ URL จริงลงไปลองเทสตรงนี้)
     test_urls = [
-        "https://www.livinginsider.com/livingdetail/condo/id/123456.html", # <--- เปลี่ยนเป็น URL จริงที่ต้องการเทส
+        "https://www.livinginsider.com/searchword/Condo/Buysell/1/รวมประกาศ-ขาย-คอนโด.html", # <--- เปลี่ยนเป็น URL จริงที่ต้องการเทส
     ]
     
     # *หมายเหตุ: ปกติคุณต้องเขียน Loop ดึง URL จากหน้า Search มาใส่ใน list นี้ก่อน
