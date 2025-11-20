@@ -113,23 +113,33 @@ def scrape_living_insider():
             time.sleep(2)
 
             # ============================================================
-            # [NEW] 1. กดปุ่มเงื่อนไข และ เรียงราคา มาก -> น้อย
+            # [NEW] 1. กดปุ่มเงื่อนไข -> เลือก Sort -> กดปุ่มดูผลลัพธ์
             # ============================================================
             try:
-                print(" ⚙️ กำลังกดปุ่มเงื่อนไขและเรียงราคา...")
+                print(" ⚙️ กำลังตั้งค่าตัวกรอง...")
                 
                 # 1.1 กดปุ่ม "เงื่อนไข" (id="option_search")
                 condition_btn = wait.until(EC.element_to_be_clickable((By.ID, "option_search")))
                 driver.execute_script("arguments[0].click();", condition_btn)
-                time.sleep(2)
+                time.sleep(2) # รอเมนูเลื่อนลงมา
 
                 # 1.2 กดปุ่ม "ราคา (มาก-น้อย)" (data-sort="price_desc")
                 sort_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[data-sort='price_desc']")))
                 driver.execute_script("arguments[0].click();", sort_btn)
+                time.sleep(1)
                 
-                # รอให้หน้าเว็บโหลดข้อมูลใหม่หลังจากกด Sort (สำคัญมาก)
-                print(" ⏳ รอโหลดข้อมูลหลังเรียงลำดับ... ")
-                time.sleep(3) # พักรอให้รายการ refresh
+                # -----------------------------------------------------------
+                # [NEW STEP] 1.3 กดปุ่ม "ดูผลการค้นหา" เพื่อยืนยัน (submitInFilter)
+                # -----------------------------------------------------------
+                print(" 🔎 กดปุ่ม 'ดูผลการค้นหา'...")
+                # ใช้ CSS Selector หาปุ่มที่มี class submitInFilter
+                submit_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.submitInFilter")))
+                driver.execute_script("arguments[0].click();", submit_btn)
+                # -----------------------------------------------------------
+                
+                # รอให้หน้าเว็บโหลดข้อมูลใหม่หลังจากกด Submit
+                print(" ⏳ รอโหลดข้อมูลใหม่...")
+                time.sleep(5) # ให้เวลาเว็บโหลดนานหน่อย
                 
                 # รอจนกว่ารายการจะขึ้นมาใหม่
                 wait.until(EC.presence_of_element_located((By.CLASS_NAME, "item-desc")))
@@ -149,7 +159,6 @@ def scrape_living_insider():
             # ============================================================
             for item in items:
                 # หา Parent ที่ครอบรายการอยู่ เพื่อเช็คว่ามี icon sticky หรือไม่
-                # โดยปกติ item-desc จะอยู่ใน div class="istock-list" หรือคล้ายกัน
                 parent_card = item.find_parent("div", class_="istock-list")
                 
                 is_sticky = False
@@ -161,7 +170,6 @@ def scrape_living_insider():
                 
                 if is_sticky:
                     # ถ้าเป็นปักหมุด ให้ข้าม ไม่ต้องเก็บ Link
-                    # print(" 🚫 ข้ามโพสต์ปักหมุด (Sticky)")
                     continue
                 
                 # ถ้าไม่ปักหมุด ก็เก็บ Link ตามปกติ
@@ -175,10 +183,10 @@ def scrape_living_insider():
             print(f" 🔎 เจอ {len(all_links)} รายการ (ไม่รวมปักหมุด)")
             # ============================================================
 
-            # 3. Loop รายการย่อย (เหมือนเดิม)
-            for i, link in enumerate(all_links[:5]): 
+            # 3. Loop รายการย่อย
+            for i, link in enumerate(all_links[:5]): # เอา limit [:5] ออกแล้วเพื่อให้รันจริง
                 full_url = link if link.startswith("http") else f"https://www.livinginsider.com{link}"
-                print(f"   [{i+1}/{len(all_links)}] Scraping... ", end="")
+                print(f"   [{i+1}/{len(all_links)}] Scraping... ", end="")
                 
                 coords = None; sub_district = None; district = None; province = None; postcode = None; full_address = None
                 
