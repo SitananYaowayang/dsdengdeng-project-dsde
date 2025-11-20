@@ -239,7 +239,7 @@ def scrape_living_insider():
                         raise e # โยน Error ออกไปให้ Loop ใหญ่จัดการ (เพื่อ Restart)
                     else:
                         print("❌ Skip (Item Error)")
-                        continueฟ
+                        continue
         
         except Exception as e:
             print(f"⚠️ Error Page {page}: {e}")
