@@ -11,8 +11,7 @@ webdriver-manager        # ตัวช่วยโหลด Driver อัตโ
 undetected-chromedriver  # ตัวช่วยให้ Selenium เนียนหลบ Bot (สำคัญมากสำหรับเว็บอสังหาฯ)
 
 # --- Big Data & Pipeline ---
-pyspark
-          # *หมายเหตุ: บน Windows ติดตั้งยาก แนะนำให้ใช้ Docker หรือ WSL
+# pyspark                  # *หมายเหตุ: บน Windows ติดตั้งยาก แนะนำให้ใช้ Docker หรือ WSL
 
 # --- AI / Machine Learning ---
 scikit-learn
@@ -20,9 +19,9 @@ scipy
 
 # --- Visualization & Geospatial ---
 streamlit
-matplotlib
-seaborn
 geopandas
+folium
+streamlit-folium
 folium                   # แนะนำเพิ่ม! เอาไว้พลอตแผนที่ Interactive สวยๆ (ทำงานคู่ Geopandas ดีมาก)
 mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
 plotly
