@@ -6,9 +6,12 @@ import numpy as np
 import folium 
 from streamlit_folium import st_folium
 
+
 from viz_components import (
     create_price_heatmap, 
     create_problem_heatmap,
+    create_livability_heatmap,
+    create_single_layer_heatmap,
     create_feature_importance_chart,
     create_quadrant_analysis
 )
@@ -46,38 +49,42 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Mock Data ---
-@st.cache_data 
-def load_data():
-    """Load main data (call only once)"""
-    center_lat, center_lon = 13.74, 100.55
-    data = {
-        'project_name': [f'Condo {i}' for i in range(50)],
-        'district': np.random.choice(['วัฒนา', 'ปทุมวัน', 'สาทร', 'ราชเทวี', 'ห้วยขวาง'], 50),
-        'lat': np.random.uniform(13.70, 13.80, 50),
-        'lon': np.random.uniform(100.50, 100.60, 50),
-        'price_sqm': np.random.randint(80000, 250000, 50),
-        'problem_count_500m': np.random.randint(1, 30, 50),
-        'angry_score': np.random.uniform(0.1, 0.9, 50),
-        'livability_score': np.random.uniform(3.0, 9.5, 50) 
-    }
-    return pd.DataFrame(data), center_lat, center_lon
+# --- Mock Data (โหลดจาก CSV) ---
+@st.cache_data
+def load_data(csv_path="mock.csv"):
+    """
+    Load main data from CSV (call only once)
+    CSV ต้องมีคอลัมน์: 
+    ['project_name', 'district', 'lat', 'lon', 'price_sqm', 'problem_count_500m', 'angry_score', 'livability_score']
+    """
+    df = pd.read_csv(csv_path)
 
-# Load mock data and center coordinates
-df_mock, center_lat, center_lon = load_data()
+    # กำหนด center map แบบเฉลี่ยพิกัดทั้งหมด
+    center_lat = df['lat'].mean()
+    center_lon = df['lon'].mean()
+
+    return df, center_lat, center_lon
+
+# Load data
+df_mock, center_lat, center_lon = load_data("mock.csv")
 
 # --- Sidebar ---
 with st.sidebar:
     st.title("Visualization Settings")
     st.markdown("---")
-    
+
     page_selection = st.radio(
-        "Page Selection",
-        (
-            "1. 🗺️ Valuation & Geospatial", 
-            "2. 📈 Model Insights & Ranking"
-        )
+        "",
+        ("Visual Insights", "Data Overview & Sources")
     )
+
+    if page_selection == "Visual Insights":
+        st.markdown("**Visual Insights**")
+        st.caption("Section presents processed data through interactive visualizations.")
+    elif page_selection == "Data Overview & Sources":
+        st.markdown("**Data Overview & Sources**")
+        st.caption("Review data sources and the project timeframe to verify the overall reliability of the data.")
+
     st.markdown("---")
     
     # ตัวกรองรวม (ใช้ได้ทั้ง 2 หน้า)
@@ -95,7 +102,7 @@ with st.sidebar:
         step=5000
     )
 
-# Filter data
+# Filter data (maidai ใช้)
 df_filtered = df_mock[
     (df_mock['district'].isin(selected_district)) &
     (df_mock['price_sqm'] >= min_price) &
@@ -109,12 +116,12 @@ st.title("The Prime Vibe or the Problem Drive?")
 st.subheader("Analyze the impact of city problems (Traffy Fondue) impact on property prices.")
 st.markdown("---")
 
-# --- Page 1: Map (Geospatial Analysis) ---
-if page_selection == "1. 🗺️ Valuation & Geospatial":
+# --- Page 1: Visual Insights ---
+if page_selection == "Visual Insights":
     
     # --- 1. Heatmap ---
-    st.header("🗺️ Geospatial Analysis")
-    st.markdown("เปรียบเทียบความร้อนของราคาอสังหาฯ (Layer 1) และความรุนแรงของปัญหาเมือง (Layer 2)")
+    st.header("Heatmap")
+    # st.markdown("เปรียบเทียบความร้อนของราคาอสังหาฯ (Layer 1) และความรุนแรงของปัญหาเมือง (Layer 2)")
 
     # Filters
     with st.expander("⚙️ ตัวกรองสำหรับแผนที่"):
@@ -123,16 +130,24 @@ if page_selection == "1. 🗺️ Valuation & Geospatial":
             st.multiselect("เน้นปัญหาเมือง:", options=['ขยะ', 'ทางเท้า', 'น้ำท่วม'], default=['ขยะ'])
         with col_map_filter_2:
             st.slider("ช่วงราคา (ต่อ ตร.ม.):", 50000, 300000)
-        
-    # view only once at a time
-    tab1, tab2 = st.tabs(["🔥 Price Heatmap (ราคา)", "🚨 Problem Intensity (ปัญหา)"]) 
-    
-    # Tab 1: Price Heatmap
-    with tab1:
-        create_price_heatmap(df_filtered, center_lat, center_lon) 
-    # Tab 2: Problem Intensity Heatmap
-    with tab2:
-        create_problem_heatmap(df_filtered, center_lat, center_lon)
+    # เลือก layer ใน expander
+        layer_option = st.radio(
+            "เลือก Heatmap Layer:",
+            ["Condominium Pricing (Price per Square Meter)", 
+            "Community Challenges (Problem Intensity)", 
+            "Overall Livability Score (คะแนนความน่าอยู่โดยรวม)"]
+        )
+
+    # แปลงตัวเลือกให้ตรงกับ function
+    layer_map = {
+        "Condominium Pricing (Price per Square Meter)": "price",
+        "Community Challenges (Problem Intensity)": "problem",
+        "Overall Livability Score (คะแนนความน่าอยู่โดยรวม)": "livability"
+    }
+    selected_layer = layer_map[layer_option]
+
+    # แสดง map
+    create_single_layer_heatmap(df_mock, center_lat, center_lon, layer_type=selected_layer)
 
     # --- 2. Selectbox & KPIs ---
     district_options = df_mock['district'].unique().tolist()
@@ -167,7 +182,7 @@ if page_selection == "1. 🗺️ Valuation & Geospatial":
     st.markdown("---")
 
 # --- Page 2: Model Insights & Ranking ---
-elif page_selection == "2. 📈 Model Insights & Ranking":
+elif page_selection == "Data Overview & Sources":
     
     # --- 1. Data Overview ---
     col_data_1, col_data_2, col_data_3 = st.columns(3)
