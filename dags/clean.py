@@ -1,9 +1,9 @@
 import pandas as pd
-import pandas as pd
 from datetime import datetime, timedelta
 import re
+import numpy as np
 
-df = pd.read_csv("data/raw/living_insider_full_data.csv")
+df = pd.read_csv("data/raw/living_insider_full_data_p3.csv")
 
 df.dropna(subset=['full_address'], inplace=True)
 df.dropna(subset=['price'], inplace=True)
@@ -66,6 +66,42 @@ df['publish_date'] = pd.to_datetime(
     format='%d/%m/%Y', 
     errors='coerce'
 )
+df['price_per_sqm'] = (
+    df['price_per_sqm']
+    .astype(str) # 1. แปลงเป็น string ก่อนเพื่อป้องกัน error ในการใช้ .str
+    .str.replace(r'[^\d,]+', '', regex=True) # 2. ใช้ regex ลบทุกอักขระที่ไม่ใช่ตัวเลข (\d) หรือคอมมา (,)
+    .str.replace(',', '', regex=False) # 3. ลบคอมมา (,) ซึ่งเป็นตัวคั่นหลักพัน
+    .replace('nan', np.nan) # 4. จัดการกับค่า 'nan' ที่อาจเกิดจากการแปลง string
+    .astype(float) # 5. แปลงข้อมูลที่เหลือให้เป็นตัวเลขทศนิยม (float)
+)
 
-output_file_path = "data/processed/living_insider_BKK_processed_01.csv"
+df.drop_duplicates(subset=['url'], keep='first', inplace=True)
+
+df['price'] = (
+    df['price']
+    .astype(str) # แปลงเป็น string ก่อนเพื่อความปลอดภัยในการใช้ .str
+    .str.replace('฿', '', regex=False) # ลบสัญลักษณ์ '฿'
+    .str.replace(',', '', regex=False) # ลบเครื่องหมายคอมมา ','
+    .replace('nan', pd.NA) # จัดการกับค่า 'nan' ที่อาจแปลงมาจาก string
+    .astype(float) # แปลงเป็นตัวเลขทศนิยม (float)
+)
+
+df['usable_area'] = (
+    df['usable_area']
+    .astype(str)
+    # 1. ลบอักขระที่ไม่ใช่ตัวเลขหรือจุดทศนิยม
+    .str.replace(r'[^\d.]', '', regex=True) 
+    
+    # 2. <<< เพิ่มบรรทัดนี้เพื่อจัดการจุดซ้ำซ้อน! >>>
+    # ใช้ regex เพื่อแทนที่จุดทศนิยมที่ตามมาด้วยจุดทศนิยมอื่น (เช่น '..', '...') ให้เหลือแค่จุดเดียว
+    .str.replace(r'\.{2,}', '.', regex=True) # แทนที่จุดทศนิยม 2 จุดขึ้นไป ด้วยจุดทศนิยม 1 จุด
+    
+    # 3. ลบจุดทศนิยมที่อยู่ตอนท้ายหรือตอนต้น (เช่น '.30.45' -> '30.45' หรือ '30.45.' -> '30.45')
+    .str.strip('.') 
+    
+    .replace('nan', pd.NA)
+    .astype(float) # บรรทัดนี้ควรทำงานได้แล้ว
+)
+
+output_file_path = "data/processed/living_insider_BKK_processed_02.csv"
 df.to_csv(output_file_path, index=False)
