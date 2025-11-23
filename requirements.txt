@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # --- Data Manipulation ---
 pandas
 numpy
@@ -24,3 +25,7 @@ seaborn
 geopandas
 folium                   # แนะนำเพิ่ม! เอาไว้พลอตแผนที่ Interactive สวยๆ (ทำงานคู่ Geopandas ดีมาก)
 mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
+||||||| 98e605f
+=======
+pip install -q -U google-generativeai
+>>>>>>> dc2ca3b0ec46f5169abf6c9feab7c9c5a70b9279
