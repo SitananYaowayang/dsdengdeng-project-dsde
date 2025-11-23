@@ -1,14 +1,13 @@
 # viz_functions.py
-
 import streamlit as st
 import pandas as pd
+import altair as alt
 import folium
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 import plotly.express as px
 from folium.plugins import HeatMap, MiniMap,MeasureControl
 from branca.element import Template, MacroElement
-
 
 # ---heatmap
 def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", map_key="single_map"):
@@ -153,59 +152,68 @@ def create_bubble_chart(df: pd.DataFrame):
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Bar Chart แสดง Feature Importance จาก Regression Model
-def create_feature_importance_chart():
-    st.subheader("📊 Model Feature Importance")
-    st.markdown("แสดงปัจจัยที่มีผลต่อราคาต่อ ตร.ม. (จาก XGBoost Model)")
+# --- Prediction Line Chart ---
+def create_prediction_chart(current_price, selected_problems):
+    """
+    สร้างกราฟเส้นทำนายราคา 5 ปีข้างหน้า เปรียบเทียบระหว่าง
+        1. Base Case (โตตามเงินเฟ้อปกติ)
+        2. Improved Case (โตขึ้นหากแก้ปัญหาเมืองที่เลือก)
+    """
+    years = list(range(2025, 2031))
     
-    importance_data = pd.DataFrame({
-        'Feature': ['Angry Score (500m)', 'Distance to BTS/MRT', 'Problem Count (500m)', 'Project Age', 'Commercial Area Proximity'],
-        'Importance Score': [0.45, 0.30, 0.15, 0.07, 0.03]
-    }).sort_values('Importance Score', ascending=True)
+    # สมมติฐาน: ราคาคอนโดโตปีละ 3%
+    base_growth_rate = 0.03 
+    
+    # สมมติฐาน: ปัญหาแต่ละอย่างถ้าแก้ได้ จะช่วยดันราคาขึ้นอีกอย่างละ 1.5%
+    uplift_per_problem = 0.015 
+    extra_growth = len(selected_problems) * uplift_per_problem
 
-    fig = px.bar(
-        importance_data,
-        x='Importance Score',
-        y='Feature',
-        orientation='h',
-        title='Top 5 Drivers of Price per Square Meter',
-        color='Importance Score',
-        color_continuous_scale=px.colors.sequential.Sunset
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    data = []
     
-# Quadrant Analysis: Livability Score (X) vs Price/sqm (Y)
-def create_quadrant_analysis(df: pd.DataFrame):
-    st.subheader("📈 Quadrant Analysis: Price (Y) vs. Livability Score (X)")
-    st.markdown("ค้นหา 'Gold Mine' (Undervalued) ใน Quadrant ล่างซ้าย (ปัญหาน้อย, ราคาถูก)")
-    
-    # ใช้ Valuation Status ที่คำนวณในฟังก์ชันก่อนหน้า
-    if 'valuation_status' not in df.columns:
-        df['valuation_status'] = pd.cut(
-            df['livability_score'] / df['price_sqm'],
-            bins=[0, 0.00003, 0.00005, 1],
-            labels=['Undervalued 🟢', 'Fairly Valued 🟡', 'Overpriced 🔴']
-        )
-    
-    fig = px.scatter(
-        df, 
-        x='livability_score', 
-        y='price_sqm', 
-        color='valuation_status',
-        hover_data=['project_name', 'problem_count_500m'],
-        color_discrete_map={'Undervalued 🟢': 'green', 'Fairly Valued 🟡': 'orange', 'Overpriced 🔴': 'red'},
-        labels={
-             'livability_score': 'Livability Score (ต่ำ = น่าอยู่/ปัญหาน้อย)',
-             'price_sqm': 'ราคาต่อ ตร.ม. (บาท)'
-        },
-        title='Property Valuation by Livability & Price'
-    )
-    
-    # เพิ่มเส้นแบ่ง Quadrant (Mock: ค่าเฉลี่ย)
-    avg_score = df['livability_score'].mean()
-    avg_price = df['price_sqm'].mean()
-    
-    fig.add_vline(x=avg_score, line_width=1, line_dash="dash", line_color="grey")
-    fig.add_hline(y=avg_price, line_width=1, line_dash="dash", line_color="grey")
-    
-    st.plotly_chart(fig, use_container_width=True)
+    price_base = current_price
+    price_improved = current_price
+
+    for year in years:
+        # Base Scenario
+        price_base = price_base * (1 + base_growth_rate)
+        # Improved Scenario
+        price_improved = price_improved * (1 + base_growth_rate + extra_growth)
+        
+        data.append({"Year": str(year), "Price": round(price_base), "Scenario": "Base Case"})
+        data.append({"Year": str(year), "Price": round(price_improved), "Scenario": "Improved Case (Solved)"})
+
+    df_predict = pd.DataFrame(data)
+
+    chart = alt.Chart(df_predict).mark_line(point=True).encode(
+        x=alt.X('Year', title='Year'),
+        y=alt.Y('Price', title='Predicted Price (THB/sqm)', scale=alt.Scale(zero=False)),
+        color=alt.Color('Scenario', legend=alt.Legend(title="Scenario", orient="bottom")),
+        tooltip=['Year', 'Price', 'Scenario']
+    ).properties(
+        # title=f"5-Year Price Prediction (Impact: +{extra_growth*100:.1f}% Growth Rate)",
+        height=400
+    ).interactive()
+
+    st.altair_chart(chart, use_container_width=True)
+
+# --- Problem Distribution Chart ---
+def create_problem_distribution_chart(df_problems):
+    if df_problems.empty:
+        st.warning("No problem data available.")
+        return
+
+    # Count problems for each type
+    df_count = df_problems['type'].value_counts().reset_index()
+    df_count.columns = ['Problem Type', 'Count']
+
+    chart = alt.Chart(df_count).mark_bar().encode(
+        x=alt.X('Problem Type', sort='-y', title='Category'),
+        y=alt.Y('Count', title='Number of Reports'),
+        color=alt.Color('Problem Type', legend=None),
+        tooltip=['Problem Type', 'Count']
+    ).properties(
+        title="Distribution of Reported Issues (Traffy Fondue)",
+        height=350
+    ).interactive()
+
+    st.altair_chart(chart, use_container_width=True)
