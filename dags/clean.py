@@ -6,21 +6,29 @@ import os
 
 # --- Path Handling ---
 base_dir = os.path.dirname(os.path.abspath(__file__))
-# df = pd.read_csv(os.path.join(base_dir, "dags", "living_insider_full_data_ver1.csv"))
-df = pd.read_csv("dags/living_insider_full_data_ver1.csv")
+# ตรวจสอบ path ให้แน่ใจว่าถูกต้อง
+df1 = pd.read_csv("data/raw/living_insider_full_data_p3.csv")
+df2 = pd.read_csv("data/raw/living_insider_full_data_ver1.csv")
+df3 = pd.read_csv("data/raw/living_insider_full_data_districts.csv")
+
+df = pd.concat([df1, df2, df3], ignore_index=True)
+
+print(f"จำนวนแถวใน df1: {len(df1)}")
+print(f"จำนวนแถวใน df2: {len(df2)}")
+print(f"จำนวนแถวใน df_combined: {len(df)}")
 # ---------------------
 
 # 1. Clean basics & Filter
-print(f"Rows before drop na: {len(df)}") # แก้บรรทัดนี้
+print(f"Rows before drop na: {len(df)}") 
 df.dropna(subset=['full_address'], inplace=True)
 df.dropna(subset=['price'], inplace=True)
 df = df[df['province'] == 'กรุงเทพมหานคร'].copy()
-print(f"Rows after drop na: {len(df)}")  # แก้บรรทัดนี้
+print(f"Rows after drop na: {len(df)}") 
 
 # ==========================================
-print(f"Rows before drop duplicates: {len(df)}") # แก้บรรทัดนี้
+print(f"Rows before drop duplicates: {len(df)}") 
 df.drop_duplicates(subset=['url'], keep='first', inplace=True)
-print(f"Rows after drop duplicates: {len(df)}")  # แก้บรรทัดนี้
+print(f"Rows after drop duplicates: {len(df)}") 
 
 # ==========================================
 
@@ -63,8 +71,6 @@ df['price_per_sqm'] = (
     .astype(float)
 )
 
-# (บรรทัดเดิมตรงนี้ ลบออกไปแล้ว เพราะย้ายไปบนสุด)
-
 df['price'] = (
     df['price']
     .astype(str)
@@ -98,11 +104,25 @@ else:
 # --- 6. จัดการเติมคำว่า "เขต" ---
 if 'district' in df.columns:
     df['district'] = df['district'].astype(str).str.strip()
+    
+    # Check sub_district เพื่อแก้ district ให้ถูกต้องตามเงื่อนไขพิเศษ
+    if 'sub_district' in df.columns:
+        df['sub_district'] = df['sub_district'].astype(str).str.strip()
+        
+        # 1. กรณีแขวงมีนบุรี -> เขตมีนบุรี
+        df.loc[df['sub_district'] == 'แขวงมีนบุรี', 'district'] = 'เขตมีนบุรี'
+        
+        # 2. กรณีแขวงบางมด -> เขตบางมด (เพิ่มใหม่)
+        df.loc[df['sub_district'] == 'แขวงบางมด', 'district'] = 'เขตบางมด'
+
+    # เติมคำว่า 'เขต' สำหรับรายการที่ยังไม่มี
     condition = (~df['district'].str.startswith('เขต')) & (df['district'] != 'nan')
     df.loc[condition, 'district'] = 'เขต' + df.loc[condition, 'district']
 
 # ==========================================
 
-output_file_path = "dags/living_insider_BKK_processed_ver1.csv"
+output_file_path = "data/processed/living_insider_BKK_processed_ver4.csv"
+os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+
 df.to_csv(output_file_path, index=False)
 print("Done.")
