@@ -25,6 +25,16 @@ seaborn
 geopandas
 folium                   # แนะนำเพิ่ม! เอาไว้พลอตแผนที่ Interactive สวยๆ (ทำงานคู่ Geopandas ดีมาก)
 mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
+
+xgboost
+
+# 2. ตัวโหลดไฟล์: ใช้คำสั่ง joblib.load() เพื่อดึงโมเดลออกมา
+joblib
+
+# 3. สำหรับทำ Web API (ถ้าจะใช้คู่มือ FastAPI ที่ให้ไป)
+fastapi
+uvicorn
+pydantic
 ||||||| 98e605f
 =======
 pip install -q -U google-generativeai
