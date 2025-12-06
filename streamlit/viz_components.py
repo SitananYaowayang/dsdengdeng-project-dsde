@@ -8,6 +8,7 @@ from streamlit_folium import st_folium
 import plotly.express as px
 from folium.plugins import HeatMap, MiniMap,MeasureControl
 from branca.element import Template, MacroElement
+import math
 
 # ---heatmap
 def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", map_key="single_map"):
@@ -17,13 +18,30 @@ def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", 
     if layer_type == "price":
         st.subheader("Condominium Pricing (Price per Sq.M.)")
         st.caption("Displays the average selling price per square meter and highlights price trends for condo units.")
-        st.slider(
+
+        scale = 10 ** (len(str(df['price_sqm'].min())) - 2)
+        rounded_min = df['price_sqm'].min() - (df['price_sqm'].min() % scale)
+        scale_max = 10 ** (len(str(int(df['price_sqm'].max()))) - 2)
+        rounded_max = ((df['price_sqm'].max() + scale_max - 1) // scale_max) * scale_max
+
+        selected_price_range = st.slider(
             "ช่วงราคา (ต่อ ตร.ม.):",
-            min_value= 5000,
-            max_value= 300000,
-            value= 20000,
-            step= 1000,
+            min_value=rounded_min,
+            max_value=rounded_max,
+            value=(
+                int(df['price_sqm'].quantile(0.2)),   
+                int(df['price_sqm'].quantile(0.7))    
+            ),
+            step=1000,
         )
+        df_filtered = df[
+            (df['price_sqm'] >= selected_price_range[0]) &
+            (df['price_sqm'] <= selected_price_range[1])
+        ].copy()
+        if df_filtered.empty:
+            st.warning("No condos found within the selected price range 🙅‍♀️")
+            return
+        
         data = [[row.lat, row.lon, row.price_sqm] for _, row in df.iterrows()]
         heatmap_kwargs = {"radius": 15}
         legend_html = """
@@ -90,7 +108,7 @@ def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", 
         return
 
     # Map
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="cartodbpositron")
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=10, tiles="cartodbpositron")
     HeatMap(data, **heatmap_kwargs).add_to(m)
     m.add_child(MeasureControl(primary_length_unit="kilometers"))
     # Add legend

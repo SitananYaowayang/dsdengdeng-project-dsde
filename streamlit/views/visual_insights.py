@@ -11,8 +11,6 @@ def show(df_condos, center_lat, center_lon):
             "Community Challenges (Problem Intensity)", 
             "Overall Livability (Livability Score)"]
     layer_option=st.selectbox("Select Heatmap Layer",Heatmap_Layer)
-    
-    #st.slider("ช่วงราคา (ต่อ ตร.ม.):", 50000, 300000)
 
     layer_map = {
         "Condominium Pricing (Price per Square Meter)": "price",
