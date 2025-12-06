@@ -7,9 +7,9 @@ from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 # ================= CONFIG =================
-INPUT_FILE = 'dags/ddproperty_bangkok_all_districts.csv'
-OUTPUT_FILE = 'ddproperty_cleaned_ver6.csv'
-TEST_MODE = True       # 🟢 True = ลอง 5 แถว | 🔴 False = ทำจริง
+INPUT_FILE = r'data\raw\ddproperty\ddproperty_bangkok_all_districts.csv'
+OUTPUT_FILE = r'data\processed\ddproperty\ddproperty_processed.csv'
+TEST_MODE = False       # 🟢 True = ลอง 5 แถว | 🔴 False = ทำจริง
 TEST_ROWS = 5
 SAVE_INTERVAL = 100
 # ==========================================
@@ -35,7 +35,7 @@ df = pd.read_csv(INPUT_FILE)
 df.drop_duplicates(subset=['url'], keep='first', inplace=True)
 
 # 2. ลบคอลัมน์ที่ไม่ต้องการทิ้ง
-cols_to_drop = ['district_code', 'district_search_term']
+cols_to_drop = ['district_code', 'district_search_term','floor']
 df.drop(columns=[c for c in cols_to_drop if c in df.columns], inplace=True)
 
 print(f"✅ Data count: {len(df)}")
@@ -67,6 +67,29 @@ def clean_publish_date(text):
             return dt_obj.strftime("%Y-%m-%d")
         except: return np.nan
     return np.nan
+
+# --- เพิ่มฟังก์ชันนี้เข้าไปในส่วน CLEANING FUNCTIONS ---
+
+def clean_bedroom(val):
+    if pd.isna(val) or str(val).strip() == '-': return np.nan
+    val_str = str(val).strip()
+    
+    # 1. จัดการกรณี 'สตูดิโอ' หรือ 'Studio' -> ให้เป็น 0
+    if 'สตูดิโอ' in val_str or 'studio' in val_str.lower():
+        return 1.0
+    
+    # 2. จัดการกรณีตัวเลขบวกกัน (เช่น 3+1, 7+4) หรือตัวเลขปกติ
+    # ใช้ Regex ดึงตัวเลขทั้งหมดออกมา แล้วจับบวกกัน
+    # วิธีนี้รองรับทั้ง "3", "3+1", "3 + 1" หรือแม้แต่ "Penthouse 4" (ถ้ามีเลข 4 หลุดมา)
+    numbers = re.findall(r'\d+', val_str)
+    if numbers:
+        # แปลงเป็น int แล้วบวกกัน (เช่น ['3', '1'] -> 4)
+        total_rooms = sum(int(n) for n in numbers)
+        return float(total_rooms)
+        
+    return np.nan
+
+# ----------------------------------------------------
 
 def extract_address_from_text(full_address):
     res = {'sub_district': np.nan, 'district': np.nan, 'province': 'กรุงเทพมหานคร', 'postcode': np.nan}
@@ -104,7 +127,8 @@ df['price'] = df['price'].apply(clean_money)
 df['price_per_sqm'] = df['price_per_sqm'].apply(clean_money)
 df['usable_area'] = df['usable_area'].apply(clean_area)
 df['publish_date'] = df['publish_date'].apply(clean_publish_date)
-df['floor'] = '-'
+df['bedroom'] = df['bedroom'].apply(clean_bedroom)
+
 
 cols_geo = ['coords', 'latitude', 'longitude', 'sub_district', 'district', 'province', 'postcode']
 for col in cols_geo:
@@ -147,23 +171,23 @@ def process_geopy_hybrid(full_address):
 
     return final_res
 
-# --- 🔥 HELPER FUNCTIONS FOR PREFIX ---
-def add_prefix_district(val):
-    if pd.isna(val) or str(val).strip() == '': return np.nan
-    val = str(val).strip()
-    # ถ้ายังไม่มีคำว่า เขต ให้เติมเข้าไป
-    if not val.startswith('เขต'):
-        return f"เขต{val}"
-    return val
+# # --- 🔥 HELPER FUNCTIONS FOR PREFIX ---
+# def add_prefix_district(val):
+#     if pd.isna(val) or str(val).strip() == '': return np.nan
+#     val = str(val).strip()
+#     # ถ้ายังไม่มีคำว่า เขต ให้เติมเข้าไป
+#     if not val.startswith('เขต'):
+#         return f"เขต{val}"
+#     return val
 
-def add_prefix_sub_district(val):
-    if pd.isna(val) or str(val).strip() == '': return np.nan
-    val = str(val).strip()
-    # ถ้ายังไม่มีคำว่า แขวง ให้เติมเข้าไป
-    if not val.startswith('แขวง'):
-        return f"แขวง{val}"
-    return val
-# --------------------------------------
+# def add_prefix_sub_district(val):
+#     if pd.isna(val) or str(val).strip() == '': return np.nan
+#     val = str(val).strip()
+#     # ถ้ายังไม่มีคำว่า แขวง ให้เติมเข้าไป
+#     if not val.startswith('แขวง'):
+#         return f"แขวง{val}"
+#     return val
+# # --------------------------------------
 
 # --- RUN PROCESS ---
 print(f"🌍 Starting Process (TEST_MODE={TEST_MODE})...")
@@ -171,7 +195,7 @@ rows_to_process = df.head(TEST_ROWS) if TEST_MODE else df
 
 TARGET_COLUMNS = [
     'url', 'title', 'publish_date', 'price', 'price_per_sqm', 
-    'usable_area', 'floor', 'bedroom', 'restroom', 
+    'usable_area', 'bedroom', 'restroom', 
     'coords', 'full_address', 'sub_district', 'district', 
     'province', 'postcode', 'latitude', 'longitude'
 ]
@@ -188,16 +212,16 @@ for index, row in rows_to_process.iterrows():
     
     time.sleep(1)
 
-# --- 🔥 FINAL STEP: ADD PREFIX & FORMATTING ---
-print("✨ Finalizing: Adding prefixes (เขต/แขวง)...")
-final_df = df.head(TEST_ROWS) if TEST_MODE else df
+# # --- 🔥 FINAL STEP: ADD PREFIX & FORMATTING ---
+# print("✨ Finalizing: Adding prefixes (เขต/แขวง)...")
+# final_df = df.head(TEST_ROWS) if TEST_MODE else df
 
-# เติมคำว่า เขต / แขวง
-final_df['district'] = final_df['district'].apply(add_prefix_district)
-final_df['sub_district'] = final_df['sub_district'].apply(add_prefix_sub_district)
+# # เติมคำว่า เขต / แขวง
+# final_df['district'] = final_df['district'].apply(add_prefix_district)
+# final_df['sub_district'] = final_df['sub_district'].apply(add_prefix_sub_district)
 
 # กรอง Column สุดท้าย
-final_df = final_df.reindex(columns=TARGET_COLUMNS)
+final_df = df.reindex(columns=TARGET_COLUMNS)
 
 final_df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
 
