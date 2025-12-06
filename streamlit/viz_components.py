@@ -210,14 +210,29 @@ def create_problem_distribution_chart(df_problems):
     df_count = df_problems['type'].value_counts().reset_index()
     df_count.columns = ['Problem Type', 'Count']
 
-    chart = alt.Chart(df_count).mark_bar().encode(
-        x=alt.X('Problem Type', sort='-y', title='Category'),
-        y=alt.Y('Count', title='Number of Reports'),
-        color=alt.Color('Problem Type', legend=None),
+    # 1. Base Chart (main X, Y)
+    base = alt.Chart(df_count).encode(
+        y=alt.Y('Problem Type', sort='-x', title='Category'),
+        x=alt.X('Count', title='Number of Reports', scale=alt.Scale(domainMin=0)),
         tooltip=['Problem Type', 'Count']
-    ).properties(
+    )
+    # 2. Layer Bar
+    bars = base.mark_bar().encode(
+        color=alt.Color('Count', legend=None, scale=alt.Scale(scheme='blues')) # 'tealblues'
+    )
+    # 3. Layer Text Label
+    text = base.mark_text(
+        align='left',
+        baseline='middle',
+        dx=3
+    ).encode(
+        text='Count'
+    )
+
+    # 4. Bars + Text
+    chart = (bars + text).properties(
         title="Distribution of Reported Issues (Traffy Fondue)",
-        height=350
-    ).interactive()
+        height=max(400, len(df_count) * 40)
+    ).interactive(bind_x=False)
 
     st.altair_chart(chart, use_container_width=True)
