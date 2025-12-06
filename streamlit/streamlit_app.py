@@ -10,14 +10,8 @@ import requests
 import io # ใช้สำหรับกรณีที่ API ส่งไฟล์ CSV มาแทน JSON
 
 from styles import CUSTOM_CSS
-from data_loader import load_condo_data, load_problem_data
+from data_loader import _fetch_condo_data, _fetch_problem_data
 from views import visual_insights, future_prediction, data_overview
-from viz_components import (
-    create_single_layer_heatmap,
-    create_bubble_chart,
-    create_prediction_chart,
-    create_problem_distribution_chart
-)
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -32,14 +26,13 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 # --- Data Loading ---
 with st.spinner('Connecting to the database...'):
     # Load data from API (via data_loader)
-    df_condos = load_condo_data()   
-    df_problems = load_problem_data()
+    df_condos = _fetch_condo_data()   
+    df_problems = _fetch_problem_data()
 
 # Fallback: If API fails, check if we can read CSV directly
-if df_condos.empty:
+if df_condos.empty | df_problems.empty:
     try:
-        df_condos = pd.read_csv("mock_condos.csv")
-        st.warning("⚠️ API connection failed. Using local 'mock_condos.csv' instead.")
+        st.warning("⚠️ API connection failed")
     except:
         st.error("🚨 Failed to load data (API Down & No CSV found)")
         st.stop()

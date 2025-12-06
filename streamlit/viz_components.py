@@ -212,20 +212,32 @@ def create_problem_distribution_chart(df_problems):
     if df_problems.empty:
         st.warning("No problem data available.")
         return
-
+    
+    # Data Preparation
+    type_cols = [col for col in df_problems.columns if col.startswith('type_')]
+    if not type_cols:
+        st.error("ไม่พบคอลัมน์ type_... ในข้อมูล (ตรวจสอบ Data Loader)")
+        return
+    
     # Count problems for each type
-    df_count = df_problems['type'].value_counts().reset_index()
-    df_count.columns = ['Problem Type', 'Count']
+    type_sums = df_problems[type_cols].sum().reset_index()
+    type_sums.columns = ['problem_type', 'count']
+    type_sums['problem_type'] = type_sums['problem_type'].str.replace('type_', '')
 
     # 1. Base Chart (main X, Y)
-    base = alt.Chart(df_count).encode(
-        y=alt.Y('Problem Type', sort='-x', title='Category'),
-        x=alt.X('Count', title='Number of Reports', scale=alt.Scale(domainMin=0)),
-        tooltip=['Problem Type', 'Count']
+    max_val = type_sums['count'].max()
+    tick_values = list(range(0, int(max_val) + 5000, 5000))
+    base = alt.Chart(type_sums).encode(
+        y=alt.Y('problem_type', sort='-x', title='Category'),
+        x=alt.X('count', title='Number of Reports', scale=alt.Scale(domainMin=0), axis=alt.Axis(values=tick_values)),
+            tooltip=[
+                alt.Tooltip('problem_type', title='Category'),
+                alt.Tooltip('count', title='Count', format=',d')
+            ]
     )
     # 2. Layer Bar
     bars = base.mark_bar().encode(
-        color=alt.Color('Count', legend=None, scale=alt.Scale(scheme='blues')) # 'tealblues'
+        color=alt.Color('count', legend=None, scale=alt.Scale(scheme='blues'))
     )
     # 3. Layer Text Label
     text = base.mark_text(
@@ -233,13 +245,13 @@ def create_problem_distribution_chart(df_problems):
         baseline='middle',
         dx=3
     ).encode(
-        text='Count'
+        text=alt.Text('count', format=',d')
     )
 
     # 4. Bars + Text
     chart = (bars + text).properties(
         title="Distribution of Reported Issues (Traffy Fondue)",
-        height=max(400, len(df_count) * 40)
+        height=max(400, len(type_sums) * 45)
     ).interactive(bind_x=False)
 
     st.altair_chart(chart, use_container_width=True)
