@@ -18,8 +18,8 @@ def show(df_condos, df_problems, df_district_summary):
         "Overall Livability (Livability Score)": "livability"
     }
     selected_layer = layer_map[layer_option]
-    if not df_condos.empty:
-        create_single_layer_heatmap(df_condos, layer_type=selected_layer)
+    if not df_district_summary.empty:
+        create_single_layer_heatmap(df_district_summary, layer_type=selected_layer)
     else:
         st.warning("Cannot display map: No data or lat/lon missing.")
 
@@ -71,8 +71,8 @@ def show(df_condos, df_problems, df_district_summary):
 
     # --- 3. Bubble Chart ---
     st.header("Interactive Bubble Chart")
-    if not df_condos.empty and 'year' in df_condos.columns:
-        create_bubble_chart(df_condos)
+    if not df_district_summary.empty and 'year' in df_district_summary.columns:
+        create_bubble_chart(df_district_summary)
     else:
         st.warning("Cannot display Bubble Chart: Data missing 'year' column or is empty.")
     st.markdown("---")

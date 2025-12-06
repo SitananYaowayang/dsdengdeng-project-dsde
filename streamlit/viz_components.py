@@ -1,6 +1,7 @@
 # viz_functions.py
 import streamlit as st
 import pandas as pd
+import numpy as np
 import altair as alt
 import pydeck as pdk
 import folium
@@ -12,115 +13,145 @@ from branca.element import Template, MacroElement
 import math
 
 # ---heatmap
-def create_single_layer_heatmap(df, layer_type="price", map_key="single_map"):
+def create_single_layer_heatmap(df, layer_type="price"):
     """
     layer_type: 'price', 'problem', 'livability'
+    สร้าง Heatmap โดยใช้ PyDeck และ st.pydeck_chart
     """
+    
+    if df.empty:
+        st.warning("Data is empty. Cannot draw map.")
+        return
+
+    # 1. คำนวณหาจุดศูนย์กลางของแผนที่ (View State)
+    # ใช้ค่าเฉลี่ยของ lat/lon เป็นจุดศูนย์กลาง
+    center_lat = df['lat'].mean()
+    center_lon = df['lon'].mean()
+    
+    # 2. เตรียมข้อมูลและตั้งค่า PyDeck Layer ตาม Layer Type
+    # กำหนด View State เริ่มต้น
+    view_state = pdk.ViewState(
+        latitude=center_lat,
+        longitude=center_lon,
+        zoom=9.5,
+        pitch=0,
+    )
+    
+    # ตัวแปรสำหรับ PyDeck Layer
+    layer = None
+    tooltip_data = None
+    
     if layer_type == "price":
         st.subheader("Condominium Pricing (Price per Sq.M.)")
         st.caption("Displays the average selling price per square meter and highlights price trends for condo units.")
 
-        scale = 10 ** (len(str(df['price_sqm'].min())) - 2)
-        rounded_min = df['price_sqm'].min() - (df['price_sqm'].min() % scale)
-        scale_max = 10 ** (len(str(int(df['price_sqm'].max()))) - 2)
-        rounded_max = ((df['price_sqm'].max() + scale_max - 1) // scale_max) * scale_max
+        df['weight_value'] = df['Avg_Price']
+        weight_column = 'weight_value'
+        df['Avg_Price'] = pd.to_numeric(df['Avg_Price'], errors='coerce')
 
-        selected_price_range = st.slider(
-            "ช่วงราคา (ต่อ ตร.ม.):",
-            min_value=rounded_min,
-            max_value=rounded_max,
+        # Drop invalid values (<=0 or NaN)
+        df = df[df['Avg_Price'] > 0].dropna(subset=['Avg_Price'])
+
+        p_min = df['Avg_Price'].min()
+        p_max = df['Avg_Price'].max()
+
+        # หาความใหญ่ของเลข เพื่อให้ปัดเป็นหลักพัน
+        order = 10 ** (int(np.log10(p_min)) - 1)
+
+        rounded_min = np.floor(p_min / order) * order
+        rounded_max = np.ceil(p_max / order) * order
+
+        selected_range = st.slider(
+            "ช่วงราคา (บาท ต่อ ตร.ม.):",
+            min_value=float(rounded_min),
+            max_value=float(rounded_max),
             value=(
-                int(df['price_sqm'].quantile(0.2)),   
-                int(df['price_sqm'].quantile(0.7))    
+                float(df['Avg_Price'].quantile(0.2)),
+                float(df['Avg_Price'].quantile(0.7))
             ),
-            step=1000,
+            step=float(order),
         )
         df_filtered = df[
-            (df['price_sqm'] >= selected_price_range[0]) &
-            (df['price_sqm'] <= selected_price_range[1])
+            (df['Avg_Price'] >= selected_range[0]) &
+            (df['Avg_Price'] <= selected_range[1])
         ].copy()
+
         if df_filtered.empty:
-            st.warning("No condos found within the selected price range 🙅‍♀️")
+            st.warning("No data found within the selected range 🙅‍♀️")
             return
         
-        data = [[row.lat, row.lon, row.price_sqm] for _, row in df.iterrows()]
-        heatmap_kwargs = {"radius": 15}
-        legend_html = """
-        <div style="
-            position: fixed; 
-            bottom: 20px; right: 20px; 
-            width: 170px; height: 130px; 
-            background-color: white; 
-            border:2px solid grey; 
-            z-index:9999;
-            padding:10px; font-size:14px;">
-            <b>Price per Sq.M.</b><br>
-            <span style="background:blue;width:20px;height:10px;display:inline-block"></span> <100k<br>
-            <span style="background:green;width:20px;height:10px;display:inline-block"></span> 100k-150k<br>
-            <span style="background:orange;width:20px;height:10px;display:inline-block"></span> 150k-200k<br>
-            <span style="background:red;width:20px;height:10px;display:inline-block"></span> >200k
-        </div>
-        """
+        # PyDeck Heatmap Layer
+        layer = pdk.Layer(
+            'HeatmapLayer',
+            data=df_filtered,
+            get_position='[lon, lat]',
+            get_weight=weight_column,
+            opacity=0.8,
+            threshold=0.3, # ใช้ในการกำหนดความเข้มข้น
+            radius_pixels=30,
+        )
+        tooltip_data = {"text": "Avg Price: {Avg_Price}"}
+
     elif layer_type == "problem":
         st.subheader("Community Challenges (Problem Intensity)")
-        st.caption("Visualizes the reported frequency and severity of problems using the angry score as intensity weight.")
-        data = [[row.lat, row.lon, row.problem_count_500m * row.angry_score] for _, row in df.iterrows()]
-        heatmap_kwargs = {"radius": 15}
-        legend_html = """
-        <div style="
-            position: fixed; 
-            bottom: 20px; right: 20px; 
-            width: 160px; height: 110px; 
-            background-color: white; 
-            border:2px solid grey; 
-            z-index:9999;
-            padding:10px; font-size:14px;">
-            <b>Problem Intensity</b><br>
-            <span style="background:blue;width:20px;height:10px;display:inline-block"></span> Low<br>
-            <span style="background:orange;width:20px;height:10px;display:inline-block"></span> Medium<br>
-            <span style="background:red;width:20px;height:10px;display:inline-block"></span> High
-        </div>
-        """
+        st.caption("Visualizes the reported frequency and severity of problems using the angry score as intensity weight.")     
+
+        # คำนวณค่าน้ำหนัก: Total_Problem_Count * Norm_Weight
+        df['weight_value'] = df['Total_Problem_Count'] * df['Norm_Weight']
+        weight_column = 'weight_value'
+
+        # PyDeck Heatmap Layer
+        layer = pdk.Layer(
+            'HeatmapLayer',
+            data=df,
+            get_position='[lon, lat]',
+            get_weight=weight_column,
+            opacity=0.9,
+            threshold=0.3,
+            radius_pixels=30,
+        )
+        tooltip_data = {"text": "Intensity: {weight_value:.2f}"}
 
     elif layer_type == "livability":
         st.subheader("Overall Livability Score")
         st.caption("Presents a composite index score representing the overall quality of life, based on amenities, green space access, and public transport.")
-        data = [[row.lat, row.lon, row.livability_score] for _, row in df.iterrows()]
-        heatmap_kwargs = {"radius": 15, "gradient": {0.2:'red',0.5:'orange',0.8:'yellow',1.0:'green'}}
-        legend_html = """
-        <div style="
-            position: fixed; 
-            bottom: 20px; right: 20px; 
-            width: 160px; height: 120px; 
-            background-color: white; 
-            border:2px solid grey; 
-            z-index:9999;
-            padding:10px; font-size:14px;">
-            <b>Livability Score</b><br>
-            <span style="background:red;width:20px;height:10px;display:inline-block"></span> 3-4<br>
-            <span style="background:orange;width:20px;height:10px;display:inline-block"></span> 4-6<br>
-            <span style="background:yellow;width:20px;height:10px;display:inline-block"></span> 6-8<br>
-            <span style="background:green;width:20px;height:10px;display:inline-block"></span> 8-10
-        </div>
-        """
+        
+        # ใช้ Livability_Score_10 เป็นค่าน้ำหนัก
+        df['weight_value'] = df['Livability_Score_10']
+        weight_column = 'weight_value'
+
+        # PyDeck Heatmap Layer
+        # กำหนดสีเป็น 'gradient' เพื่อให้ Livability Score สูงเป็นสีเขียว
+        # NOTE: PyDeck Heatmap ใช้สี Gradient ได้ แต่การตั้งค่าจะซับซ้อนกว่า Folium
+        # ในที่นี้ใช้ค่า default เพื่อให้เห็นความแตกต่างของน้ำหนัก
+        layer = pdk.Layer(
+            'HeatmapLayer',
+            data=df,
+            get_position='[lon, lat]',
+            get_weight=weight_column,
+            opacity=0.8,
+            threshold=0.5,
+            radius_pixels=30,
+        )
+        tooltip_data = {"text": "Livability Score: {Livability_Score_10}"}
 
     else:
         st.error("Invalid layer_type!")
         return
-    '''
-    # Map
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=10, tiles="cartodbpositron")
-    HeatMap(data, **heatmap_kwargs).add_to(m)
-    m.add_child(MeasureControl(primary_length_unit="kilometers"))
-    # Add legend
-    m.get_root().html.add_child(folium.Element(legend_html))
-    # Hide attribution
-    m.get_root().header.add_child(folium.Element("""
-        <style>.leaflet-control-attribution {display: none !important;}</style>
-    """))
-    
-    st_folium(m, width=700, height=450, key=map_key)
-'''
+
+    # 3. สร้างและแสดงผล PyDeck Chart
+    if layer:
+        st.pydeck_chart(
+            pdk.Deck(
+                layers=[layer],
+                initial_view_state=view_state,
+                map_style=pdk.map_styles.DARK,
+                tooltip=tooltip_data # แสดงข้อมูลเมื่อนำเมาส์ไปชี้
+            ),
+            use_container_width=True # ทำให้แผนที่เต็มความกว้าง
+        )
+
+     
 #--bubble
 def create_bubble_chart(df: pd.DataFrame):
     min_year = int(df['year'].min())
@@ -139,7 +170,7 @@ def create_bubble_chart(df: pd.DataFrame):
     df_group = df_year.groupby("district").agg(
         avg_livability=("livability_score", "mean"),
         avg_problem_intensity=("problem_intensity", "mean"),
-        avg_price_sqm=("price_sqm", "mean"),
+        avg_price_sqm=("Avg_Price", "mean"),
         project_count=("project_name", "count")
     ).reset_index()
 

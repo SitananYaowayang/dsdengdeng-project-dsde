@@ -53,8 +53,8 @@ except Exception as e:
 # 3. Load District Summary
 try:
     if os.path.exists(SUMMARY_FILE):
-        df_summary = pd.read_csv(SUMMARY_FILE)
-        cols_num = ['lat', 'lon', 'Total_Problem_Count', 'Livability_Score_10']
+        df_summary = pd.read_csv(SUMMARY_FILE)#, encoding='cp874'
+        cols_num = ['lat', 'lon', 'Total_Problem_Count', 'Livability_Score_10','Avg_Price']
         for c in cols_num:
             if c in df_summary.columns:
                 df_summary[c] = pd.to_numeric(df_summary[c], errors='coerce')
