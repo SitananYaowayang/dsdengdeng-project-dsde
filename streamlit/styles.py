@@ -91,7 +91,6 @@ CUSTOM_CSS = """
     /* 1. SLIDER: ส่วนที่ลากแล้ว (Filled Track) และ ปุ่ม (Thumb) */
     /* เทคนิค: แทนที่จะเดาชื่อ Class เราสั่งว่า "อะไรก็ตามใน Slider ที่เคยเป็นสีแดง ให้เป็นสีน้ำเงิน" */
     /* วิธีนี้จะทำให้ "ส่วนที่ยังไม่ลาก" (ซึ่งเป็นสีเทา) ไม่ถูกเปลี่ยนสี */
-    
     div[data-testid="stSlider"] div[role="slider"] {
         background-color: #002A6E !important; /* สีปุ่ม */
         border-color: #002A6E !important;
@@ -120,33 +119,27 @@ CUSTOM_CSS = """
     div[data-testid="stSlider"] div[role="slider"] {
         background-color: #002A6E !important;
     }
-    /* 🎯 ใช้เฉพาะ radio ภายใน Sidebar เท่านั้น */
+    /* เฉพาะ radio ภายใน Sidebar เท่านั้น */
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-of-type,
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-of-type > div {
         background-color: #002A6E !important;  /* ปุ่มปกติสีน้ำเงินเข้ม */
         border: 2px solid #002A6E !important;
     }
-
     /* เมื่อถูกเลือก: ขอบเป็นสีขาว */
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div:first-of-type {
         border-color: #FFFFFF !important;
         box-shadow: 0 0 6px rgba(255, 255, 255, 0.7) !important;
     }
-
     /* ด้านในยังเป็นสีน้ำเงินเหมือนเดิม */
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div:first-of-type > div {
         background-color: #002A6E !important;
     }
     
     /* 3. RADIO BUTTONS & CHECKBOXES */
-    /* --- Checkbox Fix --- */
-    /* 3.1 เปลี่ยนเฉพาะ 'กล่องสี่เหลี่ยม' (span ตัวแรก) ให้เป็นสีน้ำเงิน */
     [data-testid="stCheckbox"] label:has(input:checked) > span:first-child {
         background-color: #002A6E !important;
         border-color: #002A6E !important;
     }
-    
-    /* 3.2 บังคับให้ส่วนข้อความ (div) พื้นหลังใส ไม่เอาสีน้ำเงิน */
     [data-testid="stCheckbox"] label > div {
         background-color: transparent !important;
         color: #002A6E !important; /* สีตัวอักษรยังคงเป็นสีน้ำเงิน */
@@ -163,6 +156,20 @@ CUSTOM_CSS = """
     }
     div[data-baseweb="select"] input {
         caret-color: #002A6E !important;
+    }
+
+    /* 5. Tab */
+    /* Change the color of the active tab's text */
+    button[aria-selected="true"] p {
+        color: #002A6E !important; /* A shade of blue for the text */
+    }
+    /* Change the color of the highlight/underline beneath the active tab */
+    [data-baseweb="tab-highlight"] {
+        background-color: #002A6E !important; /* The same shade of blue for the underline */
+    }
+    /* Change the text color of ANY tab on hover to blue */
+    button[data-baseweb="tab"]:hover p {
+        color: #002A6E !important; /* Blue on hover */
     }
 </style>
 """
