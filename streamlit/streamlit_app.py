@@ -64,6 +64,13 @@ with st.sidebar:
 
     st.markdown("---")
 
+    st.markdown("""
+        <div style='position: fixed; bottom: 20px; left: 20px; font-size: 12px; opacity: 0.7;'>
+            © 2025 Dsdengdeng Project<br>
+            Data Source: Traffy Fondue, DDProperty, Open Data BKK
+        </div>
+    """, unsafe_allow_html=True)
+
 # --- Main Panel ---
 st.title("The Prime Vibe or the Problem Drive?")
 st.subheader("Analyze the impact of city problems (Traffy Fondue) impact on property prices.")
