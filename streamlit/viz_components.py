@@ -17,6 +17,13 @@ def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", 
     if layer_type == "price":
         st.subheader("Condominium Pricing (Price per Sq.M.)")
         st.caption("Displays the average selling price per square meter and highlights price trends for condo units.")
+        st.slider(
+            "ช่วงราคา (ต่อ ตร.ม.):",
+            min_value= 5000,
+            max_value= 300000,
+            value= 20000,
+            step= 1000,
+        )
         data = [[row.lat, row.lon, row.price_sqm] for _, row in df.iterrows()]
         heatmap_kwargs = {"radius": 15}
         legend_html = """

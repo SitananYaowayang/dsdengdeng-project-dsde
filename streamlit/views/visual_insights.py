@@ -1,23 +1,18 @@
 import streamlit as st
 from viz_components import create_single_layer_heatmap, create_bubble_chart
 
+
+
 def show(df_condos, center_lat, center_lon):
     # --- 1. Heatmap ---
     st.header("Heatmap")
-    
-    with st.expander("⚙️ ตัวกรองสำหรับแผนที่"):
-        col_map_filter_1, col_map_filter_2 = st.columns(2)
-        with col_map_filter_1:
-            st.multiselect("เน้นปัญหาเมือง:", options=['ขยะ', 'ทางเท้า', 'น้ำท่วม'], default=['ขยะ'])
-        with col_map_filter_2:
-            st.slider("ช่วงราคา (ต่อ ตร.ม.):", 50000, 300000)
-    
-        layer_option = st.radio(
-            "เลือก Heatmap Layer:",
-            ["Condominium Pricing (Price per Square Meter)", 
+
+    Heatmap_Layer = ["Condominium Pricing (Price per Square Meter)", 
             "Community Challenges (Problem Intensity)", 
             "Overall Livability (Livability Score)"]
-        )
+    layer_option=st.selectbox("Select Heatmap Layer",Heatmap_Layer)
+    
+    #st.slider("ช่วงราคา (ต่อ ตร.ม.):", 50000, 300000)
 
     layer_map = {
         "Condominium Pricing (Price per Square Meter)": "price",

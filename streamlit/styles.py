@@ -119,6 +119,7 @@ CUSTOM_CSS = """
     div[data-testid="stSlider"] div[role="slider"] {
         background-color: #002A6E !important;
     }
+
     /* เฉพาะ radio ภายใน Sidebar เท่านั้น */
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-of-type,
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-of-type > div {
@@ -171,5 +172,44 @@ CUSTOM_CSS = """
     button[data-baseweb="tab"]:hover p {
         color: #002A6E !important; /* Blue on hover */
     }
+
+    /*  6. Selectbox */
+    /* กรอบ + ตัวอักษรของ selectbox */
+    div[data-baseweb="select"] > div {
+        background-color: #002A6E !important; 
+        color: #FFFFFF !important;
+    }
+    /* ตอน hover */
+    div[data-baseweb="select"] > div:hover {
+        background-color: #002A6E !important; 
+    }
+    /* Dropdown panel */
+    ul[role="listbox"] {
+        background-color: #FFFFFF !important;
+        border: 2px solid #00B3A4 !important;
+    }
+    /* Option ธรรมดา */
+    ul[role="listbox"] li {
+        color: #003366 !important;
+    }
+    /* Option ที่เลือก */
+    ul[role="listbox"] li[aria-selected="true"] {
+        background-color: #0056A6 !important;
+        color: white !important;
+    }
+    /* Option ตอน hover */
+    ul[role="listbox"] li:hover {
+        background-color: #00B3A4 !important;
+        color: white !important;
+    }
+    /* ลูกศรของ selectbox */
+    div[data-baseweb="select"] svg {
+        fill: #FFFFFF !important;
+    }
+    /* ตอน hover — ลูกศร */
+    div[data-baseweb="select"] > div:hover svg {
+        fill: #00B3A4 !important;
+    }
+
 </style>
 """
