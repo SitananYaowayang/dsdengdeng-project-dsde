@@ -1,5 +1,6 @@
 import requests
 from pathlib import Path
+import pandas as pd
 
 BASE_URL = "https://publicapi.traffy.in.th/teamchadchart-stat-api/download/bangkok_monthly"
 
@@ -51,3 +52,34 @@ with open(output_path, "wb") as f:
     f.write(download_resp.content)
  
 print(f"✅ Download completed → {output_path}")
+
+
+df = pd.read_csv(r"C:\Users\sasit\CU\2-1\dsde\project\dsdengdeng-project-dsde\data\raw\traffy-fondue\bangkok_2025-12.csv")
+
+
+# คอลัมน์ที่ต้องการเอาไปใช้ (เรียงลำดับตามนี้)
+TARGET_COLUMNS = [
+    "ticket_id",
+    "type",
+    "organization",
+    "comment",
+    "photo",
+    "photo_after",
+    "coords",
+    "address",
+    "subdistrict",
+    "district",
+    "province",
+    "timestamp",
+    "state",
+    "star",
+    "count_reopen",
+    "last_activity"
+]
+
+final_df = df.reindex(columns=TARGET_COLUMNS)
+
+final_df.to_csv(r"C:\Users\sasit\CU\2-1\dsde\project\dsdengdeng-project-dsde\data\raw\traffy-fondue\bangkok_2025-12-new.csv", index=False, encoding='utf-8-sig')
+
+
+ 

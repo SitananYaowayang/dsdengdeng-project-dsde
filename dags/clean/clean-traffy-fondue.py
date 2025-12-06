@@ -17,7 +17,7 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 sc = spark.sparkContext
-file_path = 'data/processed/traffy_fondue/bangkok_traffy.csv'
+file_path = r'C:\Users\sasit\CU\2-1\dsde\project\dsdengdeng-project-dsde\data\raw\traffy-fondue\bangkok_2025-12.csv'
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -349,7 +349,7 @@ for col_name in string_cols_to_clean:
 
 print("--- ล้างอักขระขึ้นบรรทัดใหม่เสร็จสิ้น ---")
 # 3. ใช้ DataFrame นี้ในการบันทึกไฟล์
-OUTPUT_PATH = "data/processed//output_csv"
+OUTPUT_PATH = r"C:\Users\sasit\CU\2-1\dsde\project\dsdengdeng-project-dsde\data\processed\traffy-fondue"
 
 df_cleaned_for_export.coalesce(1).write.format("csv") \
                              .option("header", "true") \
