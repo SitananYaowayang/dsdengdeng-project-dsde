@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import pydeck as pdk
 import folium
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
@@ -180,6 +181,100 @@ def create_bubble_chart(df: pd.DataFrame):
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+# --- 2. Grid Map (PyDeck) ---
+# def create_grid_map(df, center_lat, center_lon, cell_size=300, target_col=None, aggregation="SUM", color_preset="red"):
+#     needed_cols = ['lat', 'lon']
+#     if target_col:
+#         needed_cols.append(target_col)
+#     mini_df = df[needed_cols]
+    
+#     if color_preset == "red": # โทนส้ม-แดง (สำหรับปัญหา/ความหนาแน่น)
+#         color_range = [
+#             [255, 255, 178, 200], [254, 204, 92, 200], 
+#             [253, 141, 60, 200], [240, 59, 32, 200], [189, 0, 38, 200]
+#         ]
+#         elevation_scale = 50
+#     elif color_preset == "green": # โทนเขียว-ฟ้า (สำหรับราคา/มูลค่า)
+#         color_range = [
+#             [237, 248, 251, 200], [178, 226, 226, 200],
+#             [102, 194, 164, 200], [44, 162, 95, 200], [0, 109, 44, 200]
+#         ]
+#         elevation_scale = 10
+#     else: # Default
+#         color_range = [[255, 140, 0, 200]]
+#         elevation_scale = 10
+
+#     layer = pdk.Layer(
+#         "GridLayer",
+#         mini_df,
+#         pickable=True,
+#         extruded=True,
+#         cell_size=cell_size,
+#         elevation_scale=elevation_scale,
+#         get_position=['lon', 'lat'], 
+#         color_range=color_range,
+#         get_elevation_weight=target_col,
+#         aggregation=aggregation,
+#     )
+
+#     view_state = pdk.ViewState(
+#         latitude=center_lat,
+#         longitude=center_lon,
+#         zoom=11,
+#         pitch=45,
+#         bearing=0
+#     )
+
+#     tooltip_html = "<b>Value:</b> {elevationValue}<br/>Lat: {position.1}<br/>Lon: {position.0}"
+#     if target_col:
+#         tooltip_html = f"<b>{target_col}:</b> {{elevationValue}}<br/>Lat: {{position.1}}<br/>Lon: {{position.0}}"
+
+#     return pdk.Deck(
+#         layers=[layer],
+#         initial_view_state=view_state,
+#         tooltip={"html": tooltip_html, "style": {"color": "white"}}
+#     )
+
+def create_district_column_map(df, center_lat, center_lon, color_preset="red"):
+    if color_preset == "red":
+        fill_color = [200, 30, 30, 200]
+    elif color_preset == "green":
+        fill_color = [0, 150, 0, 200]
+    else:
+        fill_color = [255, 140, 0, 200]
+
+    layer = pdk.Layer(
+        "ColumnLayer",
+        df,
+        get_position=['lon', 'lat'], # ใช้ lat/lon ของจุดกึ่งกลางเขต
+        get_elevation="count",       # ความสูงตามจำนวนเรื่อง
+        elevation_scale=5,
+        radius=800,
+        get_fill_color=fill_color,
+        pickable=True,
+        auto_highlight=True,
+        extruded=True,
+    )
+
+    view_state = pdk.ViewState(
+        latitude=center_lat,
+        longitude=center_lon,
+        zoom=10,
+        pitch=60,
+        bearing=0
+    )
+
+    tooltip = {
+        "html": "<b>District:</b> {district}<br/><b>Total Problems:</b> {count}",
+        "style": {"color": "white"}
+    }
+
+    return pdk.Deck(
+        layers=[layer],
+        initial_view_state=view_state,
+        tooltip=tooltip
+    )
 
 # --- Prediction Line Chart ---
 def create_prediction_chart(current_price, selected_problems):

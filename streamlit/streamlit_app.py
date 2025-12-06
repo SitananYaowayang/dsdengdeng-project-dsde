@@ -50,7 +50,7 @@ with st.sidebar:
 
     page_selection = st.radio(
         "",
-        ("Visual Insights", "Future Price Prediction", "Data Overview & Sources")
+        ("Visual Insights", "Data Overview & Sources", "(Future Price Prediction)")
     )
     if page_selection == "Visual Insights":
         st.markdown("**Visual Insights**")
@@ -78,10 +78,10 @@ st.markdown("---")
 
 # --- Routing Logic ---
 if page_selection == "Visual Insights":
-    visual_insights.show(df_condos, center_lat, center_lon)
+    visual_insights.show(df_condos, df_problems, center_lat, center_lon)
 
-elif page_selection == "Future Price Prediction":
+elif page_selection == "(Future Price Prediction)":
     future_prediction.show(df_condos)
-
+    
 elif page_selection == "Data Overview & Sources":
     data_overview.show(df_condos, df_problems)
