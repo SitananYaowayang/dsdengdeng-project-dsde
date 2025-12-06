@@ -120,6 +120,23 @@ CUSTOM_CSS = """
     div[data-testid="stSlider"] div[role="slider"] {
         background-color: #002A6E !important;
     }
+    /* 🎯 ใช้เฉพาะ radio ภายใน Sidebar เท่านั้น */
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-of-type,
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-of-type > div {
+        background-color: #002A6E !important;  /* ปุ่มปกติสีน้ำเงินเข้ม */
+        border: 2px solid #002A6E !important;
+    }
+
+    /* เมื่อถูกเลือก: ขอบเป็นสีขาว */
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div:first-of-type {
+        border-color: #FFFFFF !important;
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.7) !important;
+    }
+
+    /* ด้านในยังเป็นสีน้ำเงินเหมือนเดิม */
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div:first-of-type > div {
+        background-color: #002A6E !important;
+    }
     
     /* 3. RADIO BUTTONS & CHECKBOXES */
     /* --- Checkbox Fix --- */
