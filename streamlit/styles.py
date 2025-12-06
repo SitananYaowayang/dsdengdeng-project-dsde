@@ -211,5 +211,63 @@ CUSTOM_CSS = """
         fill: #00B3A4 !important;
     }
 
+    /* --- 2. NUMBER INPUT & DATE INPUT (Border & Focus) --- */
+    /* เปลี่ยนสีขอบ (Border) ของช่องกรอกข้อมูลเมื่อยังไม่กด */
+    div[data-testid="stNumberInput"] div[data-baseweb="input"],
+    div[data-testid="stDateInput"] div[data-baseweb="input"] {
+        border-color: #002A6E !important;
+    }
+
+    /* เปลี่ยนสีขอบและเงา (Focus Ring) เมื่อคลิกที่ช่อง */
+    div[data-baseweb="input"]:focus-within {
+        border-color: #002A6E !important;
+        box-shadow: none !important; /* ลบเงาสีแดงเดิมออกถ้ามี */
+        /* หรือถ้าอยากได้เงาสีฟ้าจางๆ ให้ใช้บรรทัดล่างนี้แทน */
+        /* box-shadow: 0 0 0 0.2rem rgba(0, 42, 110, 0.25) !important; */
+    }
+
+    /* 3. เปลี่ยนสีตัวเลขที่พิมพ์ และสี Cursor กระพริบ */
+    div[data-testid="stNumberInput"] input {
+        color: #002A6E !important;       /* สีตัวเลข */
+        caret-color: #002A6E !important; /* สี Cursor กระพริบ */
+    }
+
+    /* 4. ปุ่ม +/- ด้านหลัง */
+    div[data-testid="stNumberInput"] button {
+        border-color: #002A6E !important;
+        color: #002A6E !important;
+    }
+    
+    /* ปุ่ม +/- ตอนกดหรือเอาเมาส์ทาบ */
+    div[data-testid="stNumberInput"] button:hover,
+    div[data-testid="stNumberInput"] button:active {
+        background-color: #002A6E !important;
+        color: white !important;
+    }
+
+    /* =========================================
+       ส่วนที่ 1: แก้ไขขอบช่อง Input (ทั้ง Date และ Number)
+       ========================================= */
+
+    /* เปลี่ยนสีขอบตอนปกติ */
+    div[data-testid="stDateInput"] div[data-baseweb="input"],
+    div[data-testid="stNumberInput"] div[data-baseweb="input"] {
+        border-color: #002A6E !important;
+    }
+
+    /* เปลี่ยนสีขอบและเงาตอนกด (Focus) - แก้ขอบแดง */
+    div[data-testid="stDateInput"] div[data-baseweb="input"]:focus-within,
+    div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
+        border-color: #002A6E !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 42, 110, 0.25) !important;
+    }
+    
+    /* เปลี่ยนสีไอคอนปฏิทินด้านขวา */
+    div[data-testid="stDateInput"] svg {
+        fill: #002A6E !important;
+    }
+
+    
+
 </style>
 """
