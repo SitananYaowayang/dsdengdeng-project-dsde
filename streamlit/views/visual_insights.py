@@ -16,13 +16,13 @@ def show(df_condos, center_lat, center_lon):
             "เลือก Heatmap Layer:",
             ["Condominium Pricing (Price per Square Meter)", 
             "Community Challenges (Problem Intensity)", 
-            "Overall Livability Score (คะแนนความน่าอยู่โดยรวม)"]
+            "Overall Livability (Livability Score)"]
         )
 
     layer_map = {
         "Condominium Pricing (Price per Square Meter)": "price",
         "Community Challenges (Problem Intensity)": "problem",
-        "Overall Livability Score (คะแนนความน่าอยู่โดยรวม)": "livability"
+        "Overall Livability (Livability Score)": "livability"
     }
     selected_layer = layer_map[layer_option]
 

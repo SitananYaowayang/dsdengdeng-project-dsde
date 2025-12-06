@@ -97,25 +97,19 @@ def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", 
 
 #--bubble
 def create_bubble_chart(df: pd.DataFrame):
-    st.subheader("💡 Bubble Chart: Average Livability vs Average Problem Intensity by District")
-
-    # --- เลือกปี ---
     min_year = int(df['year'].min())
     max_year = int(df['year'].max())
     selected_year = st.slider(
         "Select Year",
         min_value=min_year,
         max_value=max_year,
-        value=max_year
+        value=max_year,
+        help="Move the slider to explore different years!"
     )
 
-    # Filter ตามปี
     df_year = df[df['year'] == selected_year].copy()
-
-    # สร้างคอลัมน์ problem_intensity
     df_year["problem_intensity"] = df_year["problem_count_500m"] * df_year["angry_score"]
 
-    # --- ทำเฉลี่ยตามเขต ---
     df_group = df_year.groupby("district").agg(
         avg_livability=("livability_score", "mean"),
         avg_problem_intensity=("problem_intensity", "mean"),
@@ -123,7 +117,6 @@ def create_bubble_chart(df: pd.DataFrame):
         project_count=("project_name", "count")
     ).reset_index()
 
-    # Bubble chart (1 จุดต่อเขต)
     fig = px.scatter(
         df_group,
         x="avg_livability",
@@ -131,23 +124,34 @@ def create_bubble_chart(df: pd.DataFrame):
         size="avg_price_sqm",
         color="district",
         hover_name="district",
-        hover_data={
-            "avg_livability": True,
-            "avg_problem_intensity": True,
-            "avg_price_sqm": True,
-            "project_count": True
-        },
-        size_max=60,
-        color_discrete_sequence=px.colors.qualitative.Safe
+        size_max=35,
+        opacity=0.85,
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+
+    fig.update_traces(
+        marker=dict(
+            line=dict(width=2, color="white")
+        )
+    )
+
+    fig.update_traces(
+        selector=dict(mode="markers"),
+        selected=dict(marker=dict(size=55, opacity=1)),  # เด่นมาก
+        unselected=dict(marker=dict(size=0.01, opacity=0))  # ซ่อนทั้งหมด
     )
 
     fig.update_layout(
-        title=f"Bubble Chart (District Average) — {selected_year}",
-        xaxis_title="Average Livability Score",
-        yaxis_title="Average Problem Intensity",
-        legend_title="District",
-        width=900,
-        height=600
+        clickmode="event+select",
+        legend=dict(
+            itemclick="toggleothers",     # คลิก legend = โชว์เฉพาะเขตนั้น
+            itemdoubleclick="toggleothers"  # ดับเบิลคลิก = โชว์เฉพาะเขตนั้นเหมือนกัน
+        ),
+        title=dict(text=f"Bubble Chart by District — {selected_year}", x=0.35),
+        plot_bgcolor="#F9FAFF",
+        paper_bgcolor="#F5F6FF",
+        width=1000,
+        height=620
     )
 
     st.plotly_chart(fig, use_container_width=True)
