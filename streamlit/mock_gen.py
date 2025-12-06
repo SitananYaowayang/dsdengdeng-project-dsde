@@ -35,16 +35,16 @@ df_condo["date"] = pd.to_datetime(df_condo[["year", "month"]].assign(DAY=1))
 df_condo.to_csv("mock_condos.csv", index=False)
 print(f"Generated mock.csv with {num_condos} rows and 50 districts.")
 
-# Generate City Problem Data
-problem_data = {
-    "ticket_id": [f"TF_{i+1:05d}" for i in range(num_problems)],
-    "type": np.random.choice(problem_types, num_problems),
-    "district": np.random.choice(districts_bkk, num_problems),
-    "lat": np.random.uniform(13.65, 13.95, num_problems), # พิกัดควรกระจายคล้ายๆ คอนโด
-    "lon": np.random.uniform(100.35, 100.75, num_problems),
-    "status": np.random.choice(["รอการแก้ไข", "เสร็จสิ้น"], num_problems, p=[0.3, 0.7]),
-    "sentiment_angry_score": np.round(np.random.uniform(0, 10, num_problems), 1) # from LLM
-}
-df_problems = pd.DataFrame(problem_data)
-df_problems.to_csv("mock_problems.csv", index=False)
-print(f"Generated mock_problems.csv ({num_problems} rows)")
+# # Generate City Problem Data
+# problem_data = {
+#     "ticket_id": [f"TF_{i+1:05d}" for i in range(num_problems)],
+#     "type": np.random.choice(problem_types, num_problems),
+#     "district": np.random.choice(districts_bkk, num_problems),
+#     "lat": np.random.uniform(13.65, 13.95, num_problems), # พิกัดควรกระจายคล้ายๆ คอนโด
+#     "lon": np.random.uniform(100.35, 100.75, num_problems),
+#     "status": np.random.choice(["รอการแก้ไข", "เสร็จสิ้น"], num_problems, p=[0.3, 0.7]),
+#     "sentiment_angry_score": np.round(np.random.uniform(0, 10, num_problems), 1) # from LLM
+# }
+# df_problems = pd.DataFrame(problem_data)
+# df_problems.to_csv("mock_problems.csv", index=False)
+# print(f"Generated mock_problems.csv ({num_problems} rows)")

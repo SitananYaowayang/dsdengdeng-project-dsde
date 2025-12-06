@@ -1,9 +1,15 @@
 # Page 3
+import pandas as pd
 import streamlit as st
 from viz_components import create_problem_distribution_chart
 
 def show(df_condos, df_problems):
     st.header("Data Overview & Sources")
+
+    if df_condos is None:
+        df_condos = pd.DataFrame()
+    if df_problems is None:
+        df_problems = pd.DataFrame()
 
     # --- 1. Top Level Metrics ---
     st.subheader("Top Level Metrics")
@@ -44,7 +50,7 @@ def show(df_condos, df_problems):
         
     with tab2:
         if not df_problems.empty:
-            st.dataframe(df_problems[['ticket_id', 'type', 'district', 'status']].head(10), use_container_width=True)
+            st.dataframe(df_problems[['ticket_id', 'district', 'year_reported', 'type_ถนน', 'type_ทางเท้า',	'type_ความปลอดภัย',	'type_แสงสว่าง', 'type_ความสะอาด', 'type_กีดขวาง', 'type_ท่อระบายน้ำ', 'type_น้ำท่วม', 'type_ต้นไม้', 'type_PM25',	'type_จราจร', 'type_สะพาน']].head(10), use_container_width=True)
         else:
             st.write("No data.")
 
