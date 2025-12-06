@@ -7,12 +7,12 @@ import folium
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 import plotly.express as px
-from folium.plugins import HeatMap, MiniMap,MeasureControl
+from folium.plugins import HeatMap, MiniMap, MeasureControl
 from branca.element import Template, MacroElement
 import math
 
 # ---heatmap
-def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", map_key="single_map"):
+def create_single_layer_heatmap(df, layer_type="price", map_key="single_map"):
     """
     layer_type: 'price', 'problem', 'livability'
     """
@@ -107,7 +107,7 @@ def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", 
     else:
         st.error("Invalid layer_type!")
         return
-
+    '''
     # Map
     m = folium.Map(location=[center_lat, center_lon], zoom_start=10, tiles="cartodbpositron")
     HeatMap(data, **heatmap_kwargs).add_to(m)
@@ -118,9 +118,9 @@ def create_single_layer_heatmap(df, center_lat, center_lon, layer_type="price", 
     m.get_root().header.add_child(folium.Element("""
         <style>.leaflet-control-attribution {display: none !important;}</style>
     """))
-
+    
     st_folium(m, width=700, height=450, key=map_key)
-
+'''
 #--bubble
 def create_bubble_chart(df: pd.DataFrame):
     min_year = int(df['year'].min())
@@ -182,81 +182,65 @@ def create_bubble_chart(df: pd.DataFrame):
 
     st.plotly_chart(fig, use_container_width=True)
 
-# --- 2. Grid Map (PyDeck) ---
-# def create_grid_map(df, center_lat, center_lon, cell_size=300, target_col=None, aggregation="SUM", color_preset="red"):
-#     needed_cols = ['lat', 'lon']
-#     if target_col:
-#         needed_cols.append(target_col)
-#     mini_df = df[needed_cols]
+def map_value_to_color(value, vmin, vmax, color_range):
+    """ฟังก์ชันช่วยสำหรับแปลงค่าตัวเลขเป็นสีตามช่วง (Gradient)"""
+    if pd.isna(value): return [0, 0, 0, 0] # Handle NaN
+    if vmax == vmin: return color_range[-1] 
     
-#     if color_preset == "red": # โทนส้ม-แดง (สำหรับปัญหา/ความหนาแน่น)
-#         color_range = [
-#             [255, 255, 178, 200], [254, 204, 92, 200], 
-#             [253, 141, 60, 200], [240, 59, 32, 200], [189, 0, 38, 200]
-#         ]
-#         elevation_scale = 50
-#     elif color_preset == "green": # โทนเขียว-ฟ้า (สำหรับราคา/มูลค่า)
-#         color_range = [
-#             [237, 248, 251, 200], [178, 226, 226, 200],
-#             [102, 194, 164, 200], [44, 162, 95, 200], [0, 109, 44, 200]
-#         ]
-#         elevation_scale = 10
-#     else: # Default
-#         color_range = [[255, 140, 0, 200]]
-#         elevation_scale = 10
+    # Normalize 0-1
+    norm = (value - vmin) / (vmax - vmin)
+    idx = int(norm * (len(color_range) - 1))
+    return color_range[idx]
 
-#     layer = pdk.Layer(
-#         "GridLayer",
-#         mini_df,
-#         pickable=True,
-#         extruded=True,
-#         cell_size=cell_size,
-#         elevation_scale=elevation_scale,
-#         get_position=['lon', 'lat'], 
-#         color_range=color_range,
-#         get_elevation_weight=target_col,
-#         aggregation=aggregation,
-#     )
+def create_district_column_map(df, center_lat=13.7563, center_lon=100.5018, color_preset="red"):
+    """
+    สร้างแผนที่ 3D Column Chart แบ่งตามเขต
+    df: DataFrame ที่มี columns ['lat', 'lon', 'Total_Problem_Count', 'district']
+    """
+    # 1. กำหนด Palette
+    if color_preset == "red": 
+        # โทน เหลือง -> ส้ม -> แดง (สำหรับปัญหา)
+        color_range = [
+            [255, 237, 160, 200], 
+            [254, 217, 118, 200], 
+            [253, 141, 60, 200],  
+            [227, 26, 28, 200],   
+            [189, 0, 38, 200]     
+        ]
+        target_col = "Total_Problem_Count"
+        elevation_scale = 10
+        
+    else: # Default หรือ Green (สำหรับ Livability/Price)
+        color_range = [
+            [237, 248, 251, 200], [178, 226, 226, 200],
+            [102, 194, 164, 200], [44, 162, 95, 200], [0, 109, 44, 200]
+        ]
+        target_col = "Livability_Score_10" # สมมติใช้ column นี้ถ้าเป็นสีเขียว
+        elevation_scale = 10
 
-#     view_state = pdk.ViewState(
-#         latitude=center_lat,
-#         longitude=center_lon,
-#         zoom=11,
-#         pitch=45,
-#         bearing=0
-#     )
+    # 2. เตรียมข้อมูลสี (Color Mapping)
+    df = df.copy()
+    vmin = df[target_col].min()
+    vmax = df[target_col].max()
+    
+    # สร้าง column สีสำหรับแต่ละแถว
+    df['fill_color'] = df[target_col].apply(lambda x: map_value_to_color(x, vmin, vmax, color_range))
 
-#     tooltip_html = "<b>Value:</b> {elevationValue}<br/>Lat: {position.1}<br/>Lon: {position.0}"
-#     if target_col:
-#         tooltip_html = f"<b>{target_col}:</b> {{elevationValue}}<br/>Lat: {{position.1}}<br/>Lon: {{position.0}}"
-
-#     return pdk.Deck(
-#         layers=[layer],
-#         initial_view_state=view_state,
-#         tooltip={"html": tooltip_html, "style": {"color": "white"}}
-#     )
-
-def create_district_column_map(df, center_lat, center_lon, color_preset="red"):
-    if color_preset == "red":
-        fill_color = [200, 30, 30, 200]
-    elif color_preset == "green":
-        fill_color = [0, 150, 0, 200]
-    else:
-        fill_color = [255, 140, 0, 200]
-
+    # 3. สร้าง Layer
     layer = pdk.Layer(
         "ColumnLayer",
         df,
-        get_position=['lon', 'lat'], # ใช้ lat/lon ของจุดกึ่งกลางเขต
-        get_elevation="count",       # ความสูงตามจำนวนเรื่อง
-        elevation_scale=5,
-        radius=800,
-        get_fill_color=fill_color,
+        get_position=['lon', 'lat'],
+        get_elevation=target_col,     # ความสูงตามค่าข้อมูล
+        get_fill_color="fill_color",  # สีตามที่คำนวณไว้
+        elevation_scale=elevation_scale,
+        radius=800,                   # รัศมีแท่งกราฟ (เมตร)
         pickable=True,
         auto_highlight=True,
         extruded=True,
     )
 
+    # 4. View State
     view_state = pdk.ViewState(
         latitude=center_lat,
         longitude=center_lon,
@@ -265,9 +249,10 @@ def create_district_column_map(df, center_lat, center_lon, color_preset="red"):
         bearing=0
     )
 
+    # 5. Tooltip
     tooltip = {
-        "html": "<b>District:</b> {district}<br/><b>Total Problems:</b> {count}",
-        "style": {"color": "white"}
+        "html": f"<b>District:</b> {{district}}<br/><b>Value:</b> {{{target_col}}}",
+        "style": {"color": "white", "backgroundColor": "#333"}
     }
 
     return pdk.Deck(

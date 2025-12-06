@@ -5,11 +5,12 @@ from typing import Optional
 
 API_URL = "http://127.0.0.1:8000"
 
-@st.cache_data(ttl=3600)  # Cache ข้อมูลไว้ 1 ชั่วโมง
+@st.cache_data(ttl=3600) # Cache 1 hr
 def load_data():
     df_condo = _fetch_condo_data()
     df_problems = _fetch_problem_data()
-    return df_condo, df_problems
+    df_district_summary = _fetch_district_summary_data()
+    return df_condo, df_problems, df_district_summary
 
 def _fetch_condo_data():
     try:
@@ -63,4 +64,33 @@ def _fetch_problem_data():
         return pd.DataFrame()
     except Exception as e:
         st.error(f"Connect API Error (Condo): {e}")
+        return pd.DataFrame()
+    
+@st.cache_data(ttl=3600)
+def _fetch_district_summary_data():
+    """
+    Fetch District Summary Data (for 3D Column Map)
+    """
+    try:
+        response = requests.get(f"{API_URL}/district_summary", timeout=10)
+        
+        if response.status_code == 200:
+            df = pd.DataFrame(response.json())
+            if df.empty:
+                return df
+            
+            cols_num = ['lat', 'lon', 'Total_Problem_Count', 'Livability_Score_10']
+            for c in cols_num:
+                if c in df.columns:
+                    df[c] = pd.to_numeric(df[c], errors='coerce')
+            
+            return df
+        else:
+            st.error(f"❌ Error loading District Summary: Status Code {response.status_code}")
+            return pd.DataFrame()
+    except requests.exceptions.ConnectionError:
+        print("🚨 Failed to load district summary (API Down)")
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Connect API Error (Summary): {e}")
         return pd.DataFrame()
