@@ -55,7 +55,7 @@ def show(df_condos):
             if bedrooms == 0: estimated_area = 25
             
             # Area Size
-            area_sqm = st.number_input("Room Size (sq.m.)", min_value=16.0, max_value=500.0, value=float(estimated_area))
+            area_sqm = st.number_input("Room Size (sq.m.)", min_value=16.0, max_value=500.0, value=float(estimated_area), step=0.5)
     st.markdown("---")
 
     # --- 3. Prediction Logic ---
@@ -98,10 +98,10 @@ def show(df_condos):
     # --- 5. Supporting Data ---
     # Display project data in this district for comparison (Reference)
     with st.expander(f"🔎 View reference condominiums in {selected_district} district"):
-        df_ref = df_condos[df_condos['district_original'] == selected_district]
+        df_ref = df_condos[df_condos['district'] == selected_district]
         if not df_ref.empty:
             st.dataframe(
-                df_ref[['district_original', 'title', 'bedroom', 'restroom', 'usable_area', 'price', 'price_per_sqm']]
+                df_ref[['district', 'title', 'bedroom', 'restroom', 'usable_area', 'price', 'price_per_sqm']]
                 .sort_values('price_per_sqm', ascending=False)
                 .head(10)
                 .style.format({

@@ -8,13 +8,17 @@ from fastapi.middleware.gzip import GZipMiddleware
 from typing import Optional
 import uvicorn
 import os
+from pathlib import Path
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-CONDOS_FILE = "condo.csv"
-# PROBLEM_FILE = "problem.csv"
-PROBLEM_SUMMARY_FILE = "problem_summary.csv"
-DISTRICT_SUMMARY_FILE = "district_summary.csv"
+
+current_dir = Path(__file__).resolve().parent
+PROJECT_ROOT = current_dir.parent
+
+CONDOS_FILE = PROJECT_ROOT / "data" / "processed" / "ddproperty" / "condo.csv"
+PROBLEM_SUMMARY_FILE = PROJECT_ROOT / "data" / "processed" / "problem_summary.csv"
+DISTRICT_SUMMARY_FILE = PROJECT_ROOT / "data" / "processed" / "district_summary.csv"
 
 # --- LOAD DATA (Run once when API starts) ---
 # 1. Load Condos
@@ -37,6 +41,7 @@ for col in numeric_cols:
         df_condo[col] = pd.to_numeric(df_condo[col], errors='coerce')
 # Clean up infinite values and replace with None (for JSON serialization)
 df_condo = df_condo.replace([np.inf, -np.inf], np.nan)
+df_condo = df_condo.astype(object)
 df_condo = df_condo.where(pd.notnull(df_condo), None)
 print(f"✅ Loaded Condos: {len(df_condo)} rows")
 

@@ -4,16 +4,17 @@ import joblib
 import pandas as pd
 import numpy as np
 import os
+from pathlib import Path
 
 class CondoPricePredictor:
     def __init__(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.dirname(current_dir)
+        current_dir = Path(__file__).resolve().parent
+        project_root = current_dir.parent.parent
 
-        model_path = os.path.join(current_dir, 'xgboost_condo_price_model.pkl')
-        imputer_path = os.path.join(current_dir, 'imputer_values.pkl')
+        model_path = current_dir / 'xgboost_condo_price_model.pkl'
+        imputer_path = current_dir / 'imputer_values.pkl'
         # Ensure this points to the correct CSV location
-        csv_path = os.path.join(root_dir, 'district_summary.csv') 
+        csv_path = project_root / 'data' / 'processed' / 'district_summary.csv' 
 
         try:
             self.model = joblib.load(model_path)
