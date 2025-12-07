@@ -3,20 +3,25 @@ import pandas as pd
 import streamlit as st
 from viz_components import create_problem_distribution_chart
 
-def show(df_condos, df_problems):
+def show(df_condos, df_summary_problem):
     st.header("Data Overview & Sources")
 
     if df_condos is None:
         df_condos = pd.DataFrame()
-    if df_problems is None:
-        df_problems = pd.DataFrame()
+    if df_summary_problem is None:
+        df_summary_problem = pd.DataFrame()
 
     # --- 1. Top Level Metrics ---
     st.subheader("Top Level Metrics")
     col_ov_1, col_ov_2, col_ov_3 = st.columns(3)
     
     with col_ov_1:
-        total_problems = len(df_problems) if not df_problems.empty else 0
+        # Update: Calculate total sum from the summary table
+        if not df_summary_problem.empty and 'Total_Count' in df_summary_problem.columns:
+            total_problems = df_summary_problem['Total_Count'].sum()
+        else:
+            total_problems = 0
+            
         st.metric("Total Reported Issues", f"{total_problems:,}")
         st.markdown("""Source: [TraffyFondue](https://bangkok.traffy.in.th/)""")
     
@@ -34,24 +39,9 @@ def show(df_condos, df_problems):
     # --- 2. Problem Distribution Chart ---
     st.subheader("Reported Issue Distribution")
 
-    if not df_problems.empty:
-        create_problem_distribution_chart(df_problems)
+    if not df_summary_problem.empty:
+        create_problem_distribution_chart(df_summary_problem)
     else:
         st.info("No problem data loaded.")
-
-    st.markdown("---")
-
-    # --- 3. Sample Raw Data ---
-    st.subheader("Sample Raw Data")
-    tab1, tab2 = st.tabs(["Condos", "Problems"])
-        
-    with tab1:
-        st.dataframe(df_condos[['project_name', 'district', 'price_sqm']].head(10), use_container_width=True)
-        
-    with tab2:
-        if not df_problems.empty:
-            st.dataframe(df_problems[['ticket_id', 'district', 'year_reported', 'type_ถนน', 'type_ทางเท้า',	'type_ความปลอดภัย',	'type_แสงสว่าง', 'type_ความสะอาด', 'type_กีดขวาง', 'type_ท่อระบายน้ำ', 'type_น้ำท่วม', 'type_ต้นไม้', 'type_PM25',	'type_จราจร', 'type_สะพาน']].head(10), use_container_width=True)
-        else:
-            st.write("No data.")
 
     st.markdown("---")

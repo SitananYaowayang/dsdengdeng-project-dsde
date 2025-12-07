@@ -337,37 +337,39 @@ def create_prediction_chart(current_price, selected_problems):
     st.altair_chart(chart, use_container_width=True)
 
 # --- Problem Distribution Chart ---
-def create_problem_distribution_chart(df_problems):
-    if df_problems.empty:
+def create_problem_distribution_chart(df_summary_problem):
+    if df_summary_problem.empty:
         st.warning("No problem data available.")
         return
     
     # Data Preparation
-    type_cols = [col for col in df_problems.columns if col.startswith('type_')]
-    if not type_cols:
-        st.error("ไม่พบคอลัมน์ type_... ในข้อมูล (ตรวจสอบ Data Loader)")
-        return
-    
-    # Count problems for each type
-    type_sums = df_problems[type_cols].sum().reset_index()
-    type_sums.columns = ['problem_type', 'count']
-    type_sums['problem_type'] = type_sums['problem_type'].str.replace('type_', '')
+    type_sums = df_summary_problem.copy()
 
+    if 'Problem_Type' in type_sums.columns and 'Total_Count' in type_sums.columns:
+        type_sums = type_sums.rename(columns={'Problem_Type': 'problem_type', 'Total_Count': 'count'})
+    else:
+        type_sums.columns = ['problem_type', 'count']
+
+    type_sums['problem_type'] = type_sums['problem_type'].astype(str).str.replace('type_', '')
+    type_sums['count'] = pd.to_numeric(type_sums['count'], errors='coerce').fillna(0)
+    
     # 1. Base Chart (main X, Y)
     max_val = type_sums['count'].max()
     tick_values = list(range(0, int(max_val) + 5000, 5000))
     base = alt.Chart(type_sums).encode(
         y=alt.Y('problem_type', sort='-x', title='Category'),
         x=alt.X('count', title='Number of Reports', scale=alt.Scale(domainMin=0), axis=alt.Axis(values=tick_values)),
-            tooltip=[
-                alt.Tooltip('problem_type', title='Category'),
-                alt.Tooltip('count', title='Count', format=',d')
-            ]
+        tooltip=[
+            alt.Tooltip('problem_type', title='Category'),
+            alt.Tooltip('count', title='Count', format=',d')
+        ]
     )
+
     # 2. Layer Bar
     bars = base.mark_bar().encode(
         color=alt.Color('count', legend=None, scale=alt.Scale(scheme='blues'))
     )
+
     # 3. Layer Text Label
     text = base.mark_text(
         align='left',

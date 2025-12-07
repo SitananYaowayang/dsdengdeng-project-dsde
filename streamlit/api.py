@@ -12,59 +12,66 @@ import os
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 CONDOS_FILE = "mock_condos.csv"
-PROBLEM_FILE = "real_problems.csv"
-SUMMARY_FILE = "district_summary.csv"
+PROBLEM_FILE = "problem.csv"
+PROBLEM_SUMMARY_FILE = "problem_summary.csv"
+DISTRICT_SUMMARY_FILE = "district_summary.csv"
 
 # --- LOAD DATA (Run once when API starts) ---
 # 1. Load Mock Condos
 try:
-    df_condos = pd.read_csv(CONDOS_FILE)
+    df_condo = pd.read_csv(CONDOS_FILE)
     # Clean NaN to prevent JSON errors
-    df_condos = df_condos.fillna("") 
+    df_condo = df_condo.fillna("") 
 except Exception as e:
     print(f"❌ Error loading problems: {e}")
-    df_problems = pd.DataFrame()
+    df_condo = pd.DataFrame()
 
-# 2. Load Real Problems
+# 2. Load Problems
+print(f"📂 Found '{PROBLEM_FILE}', attempting to read...")
 try:
-    print(f"📂 Found '{PROBLEM_FILE}', attempting to read...")
-    try:
-        df_problems = pd.read_csv(PROBLEM_FILE, encoding='utf-8')
-        print("✅ Read with UTF-8")
-    except UnicodeDecodeError:
-        print("⚠️ UTF-8 failed, retrying with TIS-620...")
-        df_problems = pd.read_csv(PROBLEM_FILE, encoding='tis-620')
-        print("✅ Read with TIS-620")
-            
-    # Cleaning
-    if 'lat' in df_problems.columns and 'lon' in df_problems.columns:
-        df_problems['lat'] = pd.to_numeric(df_problems['lat'], errors='coerce')
-        df_problems['lon'] = pd.to_numeric(df_problems['lon'], errors='coerce')
-        initial_count = len(df_problems)
-        df_problems = df_problems.dropna(subset=['lat', 'lon'])
-        # print(f"Dropped {initial_count - len(df_problems)} rows with invalid coordinates")
-    df_problems = df_problems.replace([np.inf, -np.inf], np.nan)
-    df_problems = df_problems.where(pd.notnull(df_problems), None)
-    print(f"✅ Loaded Problems: {len(df_problems)} rows")
-except Exception as e:
-    print(f"❌ Error loading problems: {e}")
-    df_problems = pd.DataFrame()
+    df_problem = pd.read_csv(PROBLEM_FILE, encoding='utf-8')
+    print("✅ Read with UTF-8")
+except UnicodeDecodeError:
+    print("⚠️ UTF-8 failed, retrying with TIS-620...")
+    df_problem = pd.read_csv(PROBLEM_FILE, encoding='tis-620')
+    print("✅ Read with TIS-620")
+# Cleaning
+if 'lat' in df_problem.columns and 'lon' in df_problem.columns:
+    df_problem['lat'] = pd.to_numeric(df_problem['lat'], errors='coerce')
+    df_problem['lon'] = pd.to_numeric(df_problem['lon'], errors='coerce')
+    initial_count = len(df_problem)
+    df_problem = df_problem.dropna(subset=['lat', 'lon'])
+    # print(f"Dropped {initial_count - len(df_problem)} rows with invalid coordinates")
+df_problem = df_problem.replace([np.inf, -np.inf], np.nan)
+df_problem = df_problem.where(pd.notnull(df_problem), None)
+print(f"✅ Loaded Problems: {len(df_problem)} rows")
 
-# 3. Load District Summary
+# 3. Load Problem Summary
+print(f"📂 Found '{PROBLEM_SUMMARY_FILE}', attempting to read...")
 try:
-    if os.path.exists(SUMMARY_FILE):
-        df_summary = pd.read_csv(SUMMARY_FILE)#, encoding='cp874'
-        cols_num = ['lat', 'lon', 'Total_Problem_Count', 'Livability_Score_10','Avg_Price']
-        for c in cols_num:
-            if c in df_summary.columns:
-                df_summary[c] = pd.to_numeric(df_summary[c], errors='coerce')
-        print(f"✅ Loaded District Summary: {len(df_summary)} rows")
-    else:
-        print(f"⚠️ Warning: '{SUMMARY_FILE}' not found. (Map 3D won't work)")
-        df_summary = pd.DataFrame()
+    df_prob_summary = pd.read_csv(PROBLEM_SUMMARY_FILE)
+    print("✅ Loaded Problem Summary")
 except Exception as e:
-    print(f"❌ Error loading problems: {e}")
-    df_problems = pd.DataFrame()
+    print(f"❌ Error loading problem summary: {e}")
+    df_prob_summary = pd.DataFrame()
+
+# 4. Load District Summary
+print(f"📂 Found '{DISTRICT_SUMMARY_FILE}', attempting to read...")
+try:
+    df_dist_summary = pd.read_csv(DISTRICT_SUMMARY_FILE, encoding='utf-8') 
+    print("✅ Read with UTF-8")
+except UnicodeDecodeError:
+    print("⚠️ UTF-8 failed, retrying with TIS-620...")
+    df_dist_summary = pd.read_csv(DISTRICT_SUMMARY_FILE, encoding='tis-620')
+    print("✅ Read with TIS-620")
+    
+cols_num = ['lat', 'lon', 'Total_Problem_Count', 'Livability_Score_10', 'Avg_Price']
+for c in cols_num:
+    if c in df_dist_summary.columns:
+        if df_dist_summary[c].dtype == object:
+            df_dist_summary[c] = df_dist_summary[c].astype(str).str.replace(',', '')
+        df_dist_summary[c] = pd.to_numeric(df_dist_summary[c], errors='coerce')
+print(f"✅ Loaded District Summary: {len(df_dist_summary)} rows")
 
 @app.get("/")
 def root():
@@ -73,7 +80,7 @@ def root():
 @app.get("/condo_data")
 def get_condo_data(district: Optional[str] = None):
     # Get all Condos / Filter by District
-    data = df_condos
+    data = df_condo
     if not data.empty and district:
         data = data[data['district'] == district]
     return data.to_dict(orient="records")
@@ -81,15 +88,21 @@ def get_condo_data(district: Optional[str] = None):
 @app.get("/problem_data")
 def get_problem_data(limit: int = 20000):
     # Get all Traffy Fondue
-    if df_problems.empty:
+    if df_problem.empty:
         return []
     # limit = 0 -> All
-    if limit == 0 or limit >= len(df_problems):
-        return df_problems.to_dict(orient="records")
-    return df_problems.sample(n=limit).to_dict(orient="records")
+    if limit == 0 or limit >= len(df_problem):
+        return df_problem.to_dict(orient="records")
+    return df_problem.sample(n=limit).to_dict(orient="records")
+
+@app.get("/problem_summary")
+def get_problem_summary():
+    if df_prob_summary.empty:
+        return []
+    return df_prob_summary.to_dict(orient="records")
 
 @app.get("/district_summary")
 def get_district_summary():
-    if df_summary.empty:
+    if df_dist_summary.empty:
         return []
-    return df_summary.to_dict(orient="records")
+    return df_dist_summary.to_dict(orient="records")
