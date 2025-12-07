@@ -84,7 +84,7 @@ def show(df_condos):
                     price_per_sqm = predicted_price / area_sqm if area_sqm > 0 else 0
                     st.metric(
                         label="Average Price per Sq.m.",
-                        value=f"฿{price_per_sqm:,.0f} / ตร.ม."
+                        value=f"฿{price_per_sqm:,.0f} / Sq.m."
                     )
 
             except Exception as e:
@@ -97,7 +97,7 @@ def show(df_condos):
 
     # --- 5. Supporting Data ---
     # Display project data in this district for comparison (Reference)
-    with st.expander(f"🔎 View reference condos in {selected_district} district"):
+    with st.expander(f"🔎 View reference condominiums in {selected_district} district"):
         df_ref = df_condos[df_condos['district_original'] == selected_district]
         if not df_ref.empty:
             st.dataframe(

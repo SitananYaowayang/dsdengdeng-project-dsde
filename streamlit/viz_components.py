@@ -330,7 +330,7 @@ def create_district_column_map(df, center_lat=13.7563, center_lon=100.5018, colo
     view_state = pdk.ViewState(
         latitude=center_lat,
         longitude=center_lon,
-        zoom=10,
+        zoom=9,
         pitch=60,
         bearing=0
     )
