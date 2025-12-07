@@ -1,3 +1,34 @@
+# --- Core / Config ---
+python-dotenv
+pymongo
+
+# --- Data Manipulation ---
+pandas
+numpy
+openpyxl            # ให้ pandas อ่าน/เขียน Excel
+
+# --- Web Scraping & Selenium ---
+requests
+beautifulsoup4
+selenium
+webdriver-manager   # auto ดาวน์โหลด ChromeDriver
+undetected-chromedriver
+
+# --- Big Data & Pipeline ---
+pyspark             # ใช้ใน clean-traffy / notebook ที่เป็น Spark
+papermill           # ใช้รัน .ipynb ผ่านสคริปต์
+nbconvert           # ใช้ร่วมกับ papermill/nbconvert เวลา execute notebook
+
+# --- AI / Machine Learning ---
+scikit-learn
+scipy
+
+# --- Visualization & Geospatial ---
+matplotlib
+seaborn
+geopandas
+folium             # ทำแผนที่ interactive
+mapclassify        # บางฟังก์ชันของ geopandas ใช้ตัวนี้
 # --- Data Manipulation ---
 pandas
 numpy
