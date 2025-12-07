@@ -53,7 +53,7 @@ def show(df_condos, df_problem_summary, df_district_summary):
                 <span style="visibility: hidden;"><em>{total_categorized_problems:,} total problems...</em></span>
                 <br>
                 <div style="margin-top: 6px;">
-                    Source: <a href="https://www.livinginsider.com/">LivingInsider</a>
+                    Source: <a href="https://www.ddproperty.com/">DDProperty</a> 
                 </div>
             </div>
         """, unsafe_allow_html=True)
