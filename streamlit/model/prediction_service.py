@@ -18,7 +18,11 @@ class CondoPricePredictor:
         try:
             self.model = joblib.load(model_path)
             self.imputer_values = joblib.load(imputer_path)
-            self.df_scores = pd.read_csv(csv_path)
+            try:
+                self.df_scores = pd.read_csv(csv_path, encoding='utf-8')
+            except UnicodeDecodeError:
+                # ถ้า UTF-8 ยังล้มเหลว ให้ใช้ TIS-620 (หรือ 'latin-1')
+                self.df_scores = pd.read_csv(csv_path, encoding='tis-620')
             
             # --- SETUP MAPS ---
             if 'district' in self.df_scores.columns:

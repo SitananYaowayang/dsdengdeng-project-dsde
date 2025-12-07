@@ -62,7 +62,7 @@ CUSTOM_CSS = """
         opacity: 0.7 !important;
     }
     
-    /* --- SPACING (Reduce Top Margin) --- */
+    /* --- SPACING --- */
     .block-container {
         padding-top: 2rem !important; 
         padding-bottom: 1rem !important;
@@ -88,20 +88,15 @@ CUSTOM_CSS = """
     span[data-baseweb="tag"] {
         background-color: #002A6E !important;
     }
-    /* 1. SLIDER: ส่วนที่ลากแล้ว (Filled Track) และ ปุ่ม (Thumb) */
-    /* เทคนิค: แทนที่จะเดาชื่อ Class เราสั่งว่า "อะไรก็ตามใน Slider ที่เคยเป็นสีแดง ให้เป็นสีน้ำเงิน" */
-    /* วิธีนี้จะทำให้ "ส่วนที่ยังไม่ลาก" (ซึ่งเป็นสีเทา) ไม่ถูกเปลี่ยนสี */
+    /* 2. SLIDER */
     div[data-testid="stSlider"] div[role="slider"] {
-        background-color: #002A6E !important; /* สีปุ่ม */
+        background-color: #002A6E !important;
         border-color: #002A6E !important;
     }
-    
     div[data-testid="stSlider"] div[style*="background-color: rgb(255, 75, 75)"],
     div[data-testid="stSlider"] div[style*="background-color: #ff4b4b"] {
-        background-color: #002A6E !important; /* สีเส้นที่ลากแล้ว */
+        background-color: #002A6E !important;
     }
-
-    /* 2. SLIDER */
     div[data-testid="stSliderThumbValue"] {
         color: #002A6E !important;
     }
@@ -120,23 +115,19 @@ CUSTOM_CSS = """
         background-color: #002A6E !important;
     }
 
-    /* เฉพาะ radio ภายใน Sidebar เท่านั้น */
+    /* 3. RADIO BUTTONS & CHECKBOXES */
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-of-type,
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-of-type > div {
-        background-color: #002A6E !important;  /* ปุ่มปกติสีน้ำเงินเข้ม */
+        background-color: #002A6E !important;
         border: 2px solid #002A6E !important;
     }
-    /* เมื่อถูกเลือก: ขอบเป็นสีขาว */
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div:first-of-type {
         border-color: #FFFFFF !important;
         box-shadow: 0 0 6px rgba(255, 255, 255, 0.7) !important;
     }
-    /* ด้านในยังเป็นสีน้ำเงินเหมือนเดิม */
     section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div:first-of-type > div {
         background-color: #002A6E !important;
     }
-    
-    /* 3. RADIO BUTTONS & CHECKBOXES */
     [data-testid="stCheckbox"] label:has(input:checked) > span:first-child {
         background-color: #002A6E !important;
         border-color: #002A6E !important;
@@ -160,15 +151,12 @@ CUSTOM_CSS = """
     }
 
     /* 5. Tab */
-    /* Change the color of the active tab's text */
     button[aria-selected="true"] p {
         color: #002A6E !important; /* A shade of blue for the text */
     }
-    /* Change the color of the highlight/underline beneath the active tab */
     [data-baseweb="tab-highlight"] {
         background-color: #002A6E !important; /* The same shade of blue for the underline */
     }
-    /* Change the text color of ANY tab on hover to blue */
     button[data-baseweb="tab"]:hover p {
         color: #002A6E !important; /* Blue on hover */
     }
@@ -179,95 +167,71 @@ CUSTOM_CSS = """
         background-color: #002A6E !important; 
         color: #FFFFFF !important;
     }
-    /* ตอน hover */
     div[data-baseweb="select"] > div:hover {
         background-color: #002A6E !important; 
     }
-    /* Dropdown panel */
     ul[role="listbox"] {
         background-color: #FFFFFF !important;
         border: 2px solid #00B3A4 !important;
     }
-    /* Option ธรรมดา */
     ul[role="listbox"] li {
         color: #003366 !important;
     }
-    /* Option ที่เลือก */
     ul[role="listbox"] li[aria-selected="true"] {
         background-color: #0056A6 !important;
         color: white !important;
     }
-    /* Option ตอน hover */
     ul[role="listbox"] li:hover {
         background-color: #00B3A4 !important;
         color: white !important;
     }
-    /* ลูกศรของ selectbox */
     div[data-baseweb="select"] svg {
         fill: #FFFFFF !important;
     }
-    /* ตอน hover — ลูกศร */
     div[data-baseweb="select"] > div:hover svg {
         fill: #00B3A4 !important;
     }
 
-    /* --- 2. NUMBER INPUT & DATE INPUT (Border & Focus) --- */
-    /* เปลี่ยนสีขอบ (Border) ของช่องกรอกข้อมูลเมื่อยังไม่กด */
+    /* --- NUMBER INPUT & DATE INPUT --- */
     div[data-testid="stNumberInput"] div[data-baseweb="input"],
     div[data-testid="stDateInput"] div[data-baseweb="input"] {
         border-color: #002A6E !important;
     }
-
-    /* เปลี่ยนสีขอบและเงา (Focus Ring) เมื่อคลิกที่ช่อง */
     div[data-baseweb="input"]:focus-within {
         border-color: #002A6E !important;
-        box-shadow: none !important; /* ลบเงาสีแดงเดิมออกถ้ามี */
-        /* หรือถ้าอยากได้เงาสีฟ้าจางๆ ให้ใช้บรรทัดล่างนี้แทน */
-        /* box-shadow: 0 0 0 0.2rem rgba(0, 42, 110, 0.25) !important; */
+        box-shadow: none !important;
     }
-
-    /* 3. เปลี่ยนสีตัวเลขที่พิมพ์ และสี Cursor กระพริบ */
     div[data-testid="stNumberInput"] input {
-        color: #002A6E !important;       /* สีตัวเลข */
-        caret-color: #002A6E !important; /* สี Cursor กระพริบ */
+        color: #002A6E !important;
+        caret-color: #002A6E !important;
     }
-
-    /* 4. ปุ่ม +/- ด้านหลัง */
     div[data-testid="stNumberInput"] button {
         border-color: #002A6E !important;
         color: #002A6E !important;
     }
-    
-    /* ปุ่ม +/- ตอนกดหรือเอาเมาส์ทาบ */
     div[data-testid="stNumberInput"] button:hover,
     div[data-testid="stNumberInput"] button:active {
         background-color: #002A6E !important;
         color: white !important;
     }
-
-    /* =========================================
-       ส่วนที่ 1: แก้ไขขอบช่อง Input (ทั้ง Date และ Number)
-       ========================================= */
-
-    /* เปลี่ยนสีขอบตอนปกติ */
-    div[data-testid="stDateInput"] div[data-baseweb="input"],
-    div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-        border-color: #002A6E !important;
-    }
-
-    /* เปลี่ยนสีขอบและเงาตอนกด (Focus) - แก้ขอบแดง */
-    div[data-testid="stDateInput"] div[data-baseweb="input"]:focus-within,
-    div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
-        border-color: #002A6E !important;
-        box-shadow: 0 0 0 0.2rem rgba(0, 42, 110, 0.25) !important;
-    }
-    
-    /* เปลี่ยนสีไอคอนปฏิทินด้านขวา */
-    div[data-testid="stDateInput"] svg {
-        fill: #002A6E !important;
-    }
-
     
 
+    /* --- BUTTONS --- */
+    button[data-testid="stBaseButton-primary"] {
+        background-color: #002A6E !important;
+        border-color: #002A6E !important;
+        color: white !important;
+    }
+    button[data-testid="stBaseButton-primary"]:hover {
+        background-color: #0056A6 !important;
+        border-color: #0056A6 !important;
+        color: white !important;
+    }
+    button[data-testid="stBaseButton-primary"]:focus, 
+    button[data-testid="stBaseButton-primary"]:active {
+        background-color: #002A6E !important; 
+        border-color: #002A6E !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 42, 110, 0.5) !important; /* เพิ่มเงารอบปุ่มเมื่อ Focus */
+}
 </style>
 """

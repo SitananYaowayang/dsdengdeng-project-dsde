@@ -1,28 +1,43 @@
+# --- Core / Config ---
+python-dotenv
+pymongo
+
 # --- Data Manipulation ---
 pandas
 numpy
-openpyxl                 # จำเป็นสำหรับให้ pandas อ่าน/เขียนไฟล์ Excel
+openpyxl
 
 # --- Web Scraping & Selenium ---
 requests
 beautifulsoup4
 selenium
-webdriver-manager        # ตัวช่วยโหลด Driver อัตโนมัติ (แก้ปัญหา version chrome ไม่ตรง)
-undetected-chromedriver  # ตัวช่วยให้ Selenium เนียนหลบ Bot (สำคัญมากสำหรับเว็บอสังหาฯ)
+webdriver-manager
+undetected-chromedriver
 
 # --- Big Data & Pipeline ---
-# pyspark                  # *หมายเหตุ: บน Windows ติดตั้งยาก แนะนำให้ใช้ Docker หรือ WSL
+pyspark
+papermill
+nbconvert
 
 # --- AI / Machine Learning ---
 scikit-learn
 scipy
-joblib
 xgboost
+joblib
 
 # --- Visualization & Geospatial ---
-streamlit
-streamlit-folium
+matplotlib
+seaborn
 geopandas
 folium
-mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
+mapclassify
 plotly
+
+# --- Dashboard / Web UI ---
+streamlit
+streamlit-folium
+
+# --- Web API ---
+fastapi
+uvicorn
+pydantic
