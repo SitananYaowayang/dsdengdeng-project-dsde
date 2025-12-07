@@ -5,53 +5,34 @@ pymongo
 # --- Data Manipulation ---
 pandas
 numpy
-openpyxl            # ให้ pandas อ่าน/เขียน Excel
+openpyxl
 
 # --- Web Scraping & Selenium ---
 requests
 beautifulsoup4
 selenium
-webdriver-manager   # auto ดาวน์โหลด ChromeDriver
+webdriver-manager
 undetected-chromedriver
 
 # --- Big Data & Pipeline ---
-pyspark             # ใช้ใน clean-traffy / notebook ที่เป็น Spark
-papermill           # ใช้รัน .ipynb ผ่านสคริปต์
-nbconvert           # ใช้ร่วมกับ papermill/nbconvert เวลา execute notebook
-
-# --- AI / Machine Learning ---
-scikit-learn
-scipy
-
-# --- Visualization & Geospatial ---
-matplotlib
-seaborn
-geopandas
-folium             # ทำแผนที่ interactive
-mapclassify        # บางฟังก์ชันของ geopandas ใช้ตัวนี้
-# --- Data Manipulation ---
-pandas
-numpy
-openpyxl                 # จำเป็นสำหรับให้ pandas อ่าน/เขียนไฟล์ Excel
-
-# --- Web Scraping & Selenium ---
-requests
-beautifulsoup4
-selenium
-webdriver-manager        # ตัวช่วยโหลด Driver อัตโนมัติ (แก้ปัญหา version chrome ไม่ตรง)
-undetected-chromedriver  # ตัวช่วยให้ Selenium เนียนหลบ Bot (สำคัญมากสำหรับเว็บอสังหาฯ)
-
-# --- Big Data & Pipeline ---
 pyspark
-          # *หมายเหตุ: บน Windows ติดตั้งยาก แนะนำให้ใช้ Docker หรือ WSL
+papermill
+nbconvert
 
 # --- AI / Machine Learning ---
 scikit-learn
 scipy
+xgboost
+joblib
 
 # --- Visualization & Geospatial ---
 matplotlib
 seaborn
 geopandas
-folium                   # แนะนำเพิ่ม! เอาไว้พลอตแผนที่ Interactive สวยๆ (ทำงานคู่ Geopandas ดีมาก)
-mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
+folium
+mapclassify
+
+# --- Web API ---
+fastapi
+uvicorn
+pydantic
