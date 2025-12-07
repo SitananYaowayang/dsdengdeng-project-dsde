@@ -10,6 +10,8 @@ def show(df_condos, df_problem_summary, df_district_summary):
         df_condos = pd.DataFrame()
     if df_problem_summary is None:
         df_problem_summary = pd.DataFrame()
+    if df_district_summary is None:
+        df_district_summary = pd.DataFrame()
 
     # --- 1. Top Level Metrics ---
     st.subheader("Top Level Metrics")
