@@ -83,7 +83,7 @@ if page_selection == "Visual Insights":
     visual_insights.show(df_condos, df_problems, df_district_summary)
 
 elif page_selection == "Price Forecasting":
-    price_forecasting.show(df_condos, df_district_summary)
+    price_forecasting.show(df_condos)
 
 elif page_selection == "Data Overview & Sources":
     data_overview.show(df_condos, df_problem_summary, df_district_summary)

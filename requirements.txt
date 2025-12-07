@@ -16,12 +16,13 @@ undetected-chromedriver  # ตัวช่วยให้ Selenium เนีย�
 # --- AI / Machine Learning ---
 scikit-learn
 scipy
+joblib
+xgboost
 
 # --- Visualization & Geospatial ---
 streamlit
+streamlit-folium
 geopandas
 folium
-streamlit-folium
-folium                   # แนะนำเพิ่ม! เอาไว้พลอตแผนที่ Interactive สวยๆ (ทำงานคู่ Geopandas ดีมาก)
 mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
 plotly

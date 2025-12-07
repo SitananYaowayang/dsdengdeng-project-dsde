@@ -2,8 +2,20 @@ import pandas as pd
 import requests
 import streamlit as st
 from typing import Optional
+from model.prediction_service import CondoPricePredictor
 
 API_URL = "http://127.0.0.1:8000"
+
+@st.cache_resource
+def load_model():
+    return CondoPricePredictor()
+try:
+    ai = load_model()
+    district_list = list(ai.df_scores['district'].unique())
+    district_list.sort()     
+except Exception as e:
+    st.error(f"An error occurred while loading the model: {e}")
+    st.stop()
 
 @st.cache_data(ttl=3600) # Cache 1 hr
 def load_data():
@@ -13,6 +25,7 @@ def load_data():
     df_district_summary = _fetch_district_summary_data()
     return df_condo, df_problems, df_problem_summary, df_district_summary
 
+@st.cache_data(ttl=3600)
 def _fetch_condo_data():
     try:
         response = requests.get(f"{API_URL}/condo_data", timeout=10)
@@ -64,14 +77,11 @@ def _fetch_problem_data():
         st.error("🚨 Failed to load data (API Down)")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Connect API Error (Condo): {e}")
+        st.error(f"Connect API Error (Problem): {e}")
         return pd.DataFrame()
     
 @st.cache_data(ttl=3600)
 def _fetch_district_summary_data():
-    """
-    Fetch District Summary Data (for 3D Column Map)
-    """
     try:
         response = requests.get(f"{API_URL}/district_summary", timeout=10)
         
@@ -93,7 +103,7 @@ def _fetch_district_summary_data():
         print("🚨 Failed to load district summary (API Down)")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Connect API Error (Summary): {e}")
+        st.error(f"Connect API Error (District Summary): {e}")
         return pd.DataFrame()
     
 @st.cache_data(ttl=3600)
@@ -119,5 +129,5 @@ def _fetch_problem_summary_data():
         print("🚨 Failed to load problem summary (API Down)")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Connect API Error (Summary): {e}")
+        st.error(f"Connect API Error (Problem Summary): {e}")
         return pd.DataFrame()
