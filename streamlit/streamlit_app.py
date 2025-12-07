@@ -2,13 +2,11 @@
 # run "streamlit run streamlit_app.py"
 # stop Control (⌃) + C
 import streamlit as st
-import pandas as pd
-import numpy as np
 import requests
 import io
 
 from styles import CUSTOM_CSS
-from data_loader import _fetch_condo_data, _fetch_problem_data, _fetch_problem_summary_data, _fetch_district_summary_data
+from data_loader import _fetch_condo_data, _fetch_problem_summary_data, _fetch_district_summary_data # , _fetch_problem_data
 from views import visual_insights, data_overview, price_forecasting
 
 # --- Page Configuration ---
@@ -24,13 +22,12 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 # --- Data Loading ---
 with st.spinner('Connecting to the database...'):
     # Load data from API (via data_loader)
-    df_condos = _fetch_condo_data()   
-    df_problems = _fetch_problem_data()
+    df_condos = _fetch_condo_data()
     df_problem_summary = _fetch_problem_summary_data()
     df_district_summary = _fetch_district_summary_data()
 
 # Fallback: If API fails, check if we can read CSV directly
-if df_condos.empty | df_problems.empty:
+if df_condos.empty | df_problem_summary.empty | df_district_summary.empty:
     try:
         st.warning("⚠️ API connection failed")
     except:
@@ -72,7 +69,7 @@ st.markdown("---")
 
 # --- Routing Logic ---
 if page_selection == "Visual Insights":
-    visual_insights.show(df_condos, df_problems, df_district_summary)
+    visual_insights.show(df_district_summary)
 
 elif page_selection == "Price Forecasting":
     price_forecasting.show(df_condos)
