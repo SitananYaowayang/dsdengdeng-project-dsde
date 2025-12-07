@@ -40,7 +40,7 @@ print(f"🔗 Download URL: {download_url}")
 
 # 3) ดาวน์โหลดไฟล์จาก URL โดยตรง
 
-output_dir = Path(r"C:\Users\sasit\CU\2-1\dsde\project\dsdengdeng-project-dsde\data\raw\traffy-fondue")
+output_dir = Path(r"C:\Year_2\DSDE\dsdengdeng-project-dsde\data\raw\traffy-fondue")
 output_dir.mkdir(parents=True, exist_ok=True)
 output_path = output_dir / file_name   # เซฟชื่อเดียวกับที่ API ให้มา
 
@@ -54,7 +54,7 @@ with open(output_path, "wb") as f:
 print(f"✅ Download completed → {output_path}")
 
 
-df = pd.read_csv(r"C:\Users\sasit\CU\2-1\dsde\project\dsdengdeng-project-dsde\data\raw\traffy-fondue\bangkok_2025-12.csv")
+df = pd.read_csv(rf"C:\Year_2\DSDE\dsdengdeng-project-dsde\data\raw\traffy-fondue\{file_name}")
 
 
 # คอลัมน์ที่ต้องการเอาไปใช้ (เรียงลำดับตามนี้)
@@ -79,7 +79,7 @@ TARGET_COLUMNS = [
 
 final_df = df.reindex(columns=TARGET_COLUMNS)
 
-final_df.to_csv(r"C:\Users\sasit\CU\2-1\dsde\project\dsdengdeng-project-dsde\data\raw\traffy-fondue\bangkok_2025-12-new.csv", index=False, encoding='utf-8-sig')
+final_df.to_csv(r"C:\Year_2\DSDE\dsdengdeng-project-dsde\data\raw\traffy-fondue\bangkok.csv", index=False, encoding='utf-8-sig')
 
 
  
