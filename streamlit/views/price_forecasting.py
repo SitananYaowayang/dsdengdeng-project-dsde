@@ -47,11 +47,11 @@ def show(df_condos):
         with col2:
             # Bedrooms
             bedrooms = st.number_input("Bedrooms", min_value=1, max_value=10, value=1, step=1)
-            # Bathrooms
-            bathrooms = st.number_input("Bathrooms", min_value=1, max_value=10, value=1, step=1)
+            # Restrooms
+            restrooms = st.number_input("Restrooms", min_value=1, max_value=10, value=1, step=1)
 
             # Auto-calculate area (Heuristic)
-            estimated_area = (bedrooms * 25) + (bathrooms * 10) + 5
+            estimated_area = (bedrooms * 25) + (restrooms * 10) + 5
             if bedrooms == 0: estimated_area = 25
             
             # Area Size
@@ -59,13 +59,13 @@ def show(df_condos):
     st.markdown("---")
 
     # --- 3. Prediction Logic ---
-    if st.button("💰 Evaluate Market Price", type="primary", use_container_width=True):
+    if st.button("Evaluate Market Price", type="primary", use_container_width=True):
         # AI is analyzing data and evaluating the price...
             try:
                 predicted_price = AI.predict(
                     usable_area=area_sqm,
                     bedroom=bedrooms,
-                    restroom=bathrooms,
+                    restroom=restrooms,
                     district_name=selected_district
                 )
 
@@ -97,13 +97,13 @@ def show(df_condos):
     # --- 5. Supporting Data ---
     # Display project data in this district for comparison (Reference)
     with st.expander(f"🔎 View reference condos in {selected_district} district"):
-        df_ref = df_condos[df_condos['district'] == selected_district]
+        df_ref = df_condos[df_condos['district_original'] == selected_district]
         if not df_ref.empty:
             st.dataframe(
-                df_ref[['project_name', 'price_sqm', 'district']]
-                .sort_values('price_sqm', ascending=False)
+                df_ref[['district_original', 'title', 'bedroom', 'restroom', 'usable_area', 'price', 'price_per_sqm']]
+                .sort_values('price_per_sqm', ascending=False)
                 .head(10)
-                .style.format({'price_sqm': '{:,.0f}'})
+                .style.format({'price_per_sqm': '{:,.0f}'})
             )
         else:
             # No reference project data in the system

@@ -41,7 +41,7 @@ def show(df_condos, df_problems, df_district_summary):
             
             # (Option) แสดงตารางข้อมูลประกอบ
             with st.expander("ดูข้อมูลรายเขต"):
-                st.dataframe(df_district_summary.sort_values('Total_Problem_Count', ascending=False))
+                st.dataframe(df_district_summary.sort_values('Total_Problems', ascending=False))
 
             st.caption("Data Source: Real Traffy Fondue Data (Aggregated by District)")
         else:

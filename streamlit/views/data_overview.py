@@ -17,8 +17,8 @@ def show(df_condos, df_problem_summary, df_district_summary):
     
     with col_ov_1:
         # 1. Calculate the Unique count (100k) from district summary
-        if not df_district_summary.empty and 'Total_Problem_Count' in df_district_summary.columns:
-            total_unique_problems = df_district_summary['Total_Problem_Count'].sum()
+        if not df_district_summary.empty and 'Total_Problems' in df_district_summary.columns:
+            total_unique_problems = df_district_summary['Total_Problems'].sum()
         else:
             total_unique_problems = 0
 
@@ -32,8 +32,6 @@ def show(df_condos, df_problem_summary, df_district_summary):
         st.metric("Total Reported Problems", f"{total_unique_problems:,}")
         
         # Display the Categorized count as an explanation
-        # st.caption(f"*{total_categorized_problems:,}* total problems after categorization (multi-tag).")
-        # st.markdown("""Source: [TraffyFondue](https://bangkok.traffy.in.th/)""")
         st.markdown(f"""
             <div style="margin-top: -15px; font-size: 14px; color: #666; line-height: 1.4;">
                 <em>{total_categorized_problems:,} total problems after categorization (multi-tag).</em>
@@ -59,7 +57,7 @@ def show(df_condos, df_problem_summary, df_district_summary):
         """, unsafe_allow_html=True)
         
     with col_ov_3:
-        avg_price_all = df_condos['price_sqm'].mean() if not df_condos.empty else 0
+        avg_price_all = df_condos['price_per_sqm'].mean() if not df_condos.empty else 0
         st.metric("City-wide Avg Price", f"฿{avg_price_all:,.0f}")
 
     st.markdown("---")
