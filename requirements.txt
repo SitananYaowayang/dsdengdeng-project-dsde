@@ -31,6 +31,11 @@ seaborn
 geopandas
 folium
 mapclassify
+plotly
+
+# --- Dashboard / Web UI ---
+streamlit
+streamlit-folium
 
 # --- Web API ---
 fastapi
