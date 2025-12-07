@@ -49,7 +49,7 @@ def show(df_condos, df_problems, df_district_summary):
 
     # Tab 2: 3D Condo Price Density
     with tab2:
-        st.subheader("Condo Price 3D Density")
+        st.subheader("Condominium Pricing (Price per Sq.M.)")
 
         if not df_district_summary.empty:
             map_price_3d = create_price_column_map(df_district_summary)
