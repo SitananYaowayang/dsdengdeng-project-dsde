@@ -4,13 +4,7 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import pydeck as pdk
-import folium
-from folium.plugins import HeatMap
-from streamlit_folium import st_folium
 import plotly.express as px
-from folium.plugins import HeatMap, MiniMap, MeasureControl
-from branca.element import Template, MacroElement
-import math
 
 def _create_heatmap_legend(title, color_map_data, reverse=False):
     """
@@ -278,7 +272,7 @@ def map_value_to_color(value, vmin, vmax, color_range):
     idx = int(norm * (len(color_range) - 1))
     return color_range[idx]
 
-def create_district_column_map(df, center_lat=13.7563, center_lon=100.5018, color_preset="red"):
+def create_district_column_map(df, center_lat=13.75398, center_lon=100.50144, color_preset="red"):
     """
     สร้างแผนที่ 3D Column Chart แบ่งตามเขต
     df: DataFrame ที่มี columns ['lat', 'lon', 'Total_Problems', 'district']
@@ -330,7 +324,7 @@ def create_district_column_map(df, center_lat=13.7563, center_lon=100.5018, colo
     view_state = pdk.ViewState(
         latitude=center_lat,
         longitude=center_lon,
-        zoom=9,
+        zoom=9.5,
         pitch=60,
         bearing=0
     )

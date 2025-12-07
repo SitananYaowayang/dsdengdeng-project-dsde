@@ -3,7 +3,7 @@ import pandas as pd
 import pydeck as pdk
 from viz_components import create_single_layer_heatmap, create_bubble_chart, create_district_column_map, create_price_column_map # create_grid_map,
 
-def show(df_condos, df_problems, df_district_summary):
+def show(df_district_summary):
     # --- 1. Heatmap ---
     st.header("Heatmap")
 

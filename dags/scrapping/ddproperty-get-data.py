@@ -8,17 +8,16 @@ import os
 import sys
 from pathlib import Path
 
-# --- Configuration ---
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 RAW_DIR = PROJECT_ROOT / "data" / "raw" / "ddproperty"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
 CONFIG = {
-    'chrome_version': 142,       # เปลี่ยนให้ตรงกับ Chrome ในเครื่องคุณ
+    'chrome_version': 142,      
     'output_file': RAW_DIR/'ddproperty_last_7days.csv',
     'max_pages': 10,
-    'sleep_range': (6, 9),       # ช่วงเวลาสุ่มรอ (วินาที)
+    'sleep_range': (6, 9),     
     'base_url': "https://www.ddproperty.com/รวมประกาศขาย?listingType=sale&propertyTypeGroup=N&propertyTypeCode=CONDO&isCommercial=false&lastPosted=7"
 }
 
@@ -32,7 +31,6 @@ class DDPropertyPipeline:
         """Step 1: เริ่มต้น Browser"""
         print("[Pipeline] Initializing Browser...")
         options = uc.ChromeOptions()
-        # options.add_argument('--headless') # อย่าเปิดถ้าติด Cloudflare
         
         try:
             self.driver = uc.Chrome(
@@ -50,8 +48,7 @@ class DDPropertyPipeline:
         print("!!! HUMAN VERIFICATION CHECKPOINT !!!")
         print("ระบบจะเปิดหน้าแรก... กรุณาแก้ Cloudflare (ติ๊กถูก) ให้เรียบร้อย")
         print("="*50)
-        
-        # เปิดหน้าแรกเพื่อให้ User เคลียร์ Cloudflare
+
         self.driver.get("https://www.ddproperty.com")
         
         input(">>> เมื่อเข้าหน้าเว็บได้ปกติแล้ว ให้กด Enter ที่นี่เพื่อเริ่มดูดข้อมูล... ")
@@ -73,25 +70,21 @@ class DDPropertyPipeline:
         for item in listings:
             row = {}
             
-            # Get URL
             url_raw = item.get('href')
             if url_raw and not url_raw.startswith('http'):
                 url_raw = "https://www.ddproperty.com" + url_raw
             row['url'] = url_raw
 
-            # Check Duplicates
             if row['url'] in self.visited_urls:
                 continue
 
             self.visited_urls.add(row['url'])
             new_count += 1
 
-            # Helper extraction
             def get_text(da_id):
                 el = item.find(attrs={'da-id': da_id})
                 return el.get_text(strip=True) if el else "N/A"
 
-            # Parse Fields
             title_el = item.find(class_='title-badge-wrapper')
             row['title'] = title_el.get_text(strip=True) if title_el else "N/A"
             row['publish_date'] = get_text('listing-card-v2-recency')
@@ -104,7 +97,6 @@ class DDPropertyPipeline:
             address_el = item.find(class_='listing-address')
             row['full_address'] = address_el.get_text(strip=True) if address_el else "N/A"
             
-            # Placeholders
             row['floor'] = "-"
             row['coords'] = "-"
 
@@ -121,7 +113,6 @@ class DDPropertyPipeline:
         cols = ['url', 'title', 'publish_date', 'price', 'price_per_sqm', 
                 'usable_area', 'bedroom', 'restroom', 'coords', 'full_address']
         
-        # Filter existing columns
         existing_cols = [c for c in cols if c in df.columns]
         df = df[existing_cols]
 
@@ -144,24 +135,19 @@ class DDPropertyPipeline:
             for page in range(1, self.config['max_pages'] + 1):
                 print(f"--- Processing Page {page} / {self.config['max_pages']} ---")
                 
-                # Construct URL
                 target_url = f"{self.config['base_url']}&page={page}"
                 self.driver.get(target_url)
                 
-                # Sleep (Human behavior)
                 sleep_time = random.uniform(*self.config['sleep_range'])
                 time.sleep(sleep_time)
 
-                # Check Redirect (End of pages)
                 if page > 1 and "page=1" in unquote(self.driver.current_url) and f"page={page}" not in unquote(self.driver.current_url):
                     print("   [Info] Redirected to page 1. Assuming end of listings.")
                     break
                 
-                # Step 3: Extract & Scroll
                 self._scroll_page()
                 soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                 
-                # Step 4: Transform
                 data, total_found, new_found = self._extract_data_from_html(soup)
                 print(f"   [Stats] Found: {total_found} | New: {new_found}")
 
@@ -169,7 +155,6 @@ class DDPropertyPipeline:
                     print("   [Info] No listings found on this page. Stopping.")
                     break
 
-                # Step 5: Load
                 self._save_batch(data)
                 
         except KeyboardInterrupt:
