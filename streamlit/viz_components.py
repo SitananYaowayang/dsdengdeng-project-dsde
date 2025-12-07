@@ -12,7 +12,31 @@ from folium.plugins import HeatMap, MiniMap, MeasureControl
 from branca.element import Template, MacroElement
 import math
 
-# ---heatmap
+def _create_heatmap_legend(title, color_map_data, reverse=False):
+    """
+    Creates a custom legend for the heatmap using Streamlit components.
+    
+    :param title: Title of the legend (e.g., "Avg Price (Baht/Sq.M.)").
+    :param color_map_data: List of tuples (color_hex, label_text).
+    :param reverse: If True, reverses the order (for visualizing low-is-good scores).
+    """
+    st.markdown(f"**{title}**")
+    
+    data_to_display = color_map_data
+    if reverse:
+        data_to_display = list(reversed(color_map_data))
+        
+    for color, label in data_to_display:
+        st.markdown(
+            f"""
+            <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                <div style="width: 15px; height: 15px; background-color: {color}; margin-right: 10px; border: 1px solid #333;"></div>
+                <div style="font-size: 14px;">{label}</div>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+
 def create_single_layer_heatmap(df, layer_type="price"):
     """
     layer_type: 'price', 'problem', 'livability'
@@ -43,7 +67,7 @@ def create_single_layer_heatmap(df, layer_type="price"):
     
     if layer_type == "price":
         st.subheader("Condominium Pricing (Price per Sq.M.)")
-        st.caption("Displays the average selling price per square meter and highlights price trends for condo units.")
+        st.caption("Displays the average selling price per square meter and highlights price trends for condo units, aiding in market assessment and purchase affordability.")
 
         df['weight_value'] = df['Avg_Price']
         weight_column = 'weight_value'
@@ -51,7 +75,6 @@ def create_single_layer_heatmap(df, layer_type="price"):
 
         # Drop invalid values (<=0 or NaN)
         df = df[df['Avg_Price'] > 0].dropna(subset=['Avg_Price'])
-
         p_min = df['Avg_Price'].min()
         p_max = df['Avg_Price'].max()
 
@@ -94,7 +117,7 @@ def create_single_layer_heatmap(df, layer_type="price"):
 
     elif layer_type == "problem":
         st.subheader("Community Challenges (Problem Intensity)")
-        st.caption("Visualizes the reported frequency and severity of problems using the angry score as intensity weight.")     
+        st.caption("Visualizes the reported frequency and severity of problems like traffic, noise, and safety incidents that impact residents' daily life.")     
 
         # คำนวณค่าน้ำหนัก: Total_Problem_Count * Norm_Weight
         df['weight_value'] = df['Total_Problem_Count'] * df['Norm_Weight']
@@ -135,43 +158,74 @@ def create_single_layer_heatmap(df, layer_type="price"):
         )
         tooltip_data = {"text": "Livability Score: {Livability_Score_10}"}
 
+        # 3. กำหนดข้อมูล Legend
+    
+    # --- LEGEND DATA DEFINITION ---
+    legend_title = ""
+    legend_data = []
+    
+    legend_title = "ระดับความเข้มข้นของค่า"
+    
+    if layer_type == "price":
+        # ราคา
+        legend_data = [
+            ("#FFFFFF", "ราคาต่ำสุด / ความหนาแน่นต่ำ"),
+            ("#FFFF00", "ราคาปานกลาง"),
+            ("#FF4500", "ราคาสูงสุด / ความหนาแน่นสูง"),
+        ]
+        
+    elif layer_type == "problem":
+        # ปัญหา
+        legend_data = [
+            ("#FFFFFF", "ปัญหาพบน้อย"),
+            ("#FFFF00", "ปัญหาปานกลาง"),
+            ("#FF4500", "ปัญหาพบมาก"),
+        ]
+        
+    elif layer_type == "livability":
+        # คะแนนคุณภาพชีวิต (Livability Score)
+        legend_data = [
+            ("#FFFFFF", "คะแนนต่ำ (คุณภาพชีวิตแย่)"),
+            ("#FFFF00", "คะแนนปานกลาง"),
+            ("#FF4500", "คะแนนสูง (คุณภาพชีวิตดี)"),
+        ]
+
+    # 4. สร้างและแสดงผล PyDeck Chart พร้อม Legend
+    if layer:
+        # แบ่งเป็น 2 คอลัมน์: 1 สำหรับแผนที่ (3 ส่วน) และ 1 สำหรับ Legend (1 ส่วน)
+        col_map, col_legend = st.columns([3, 1]) 
+        
+        with col_map:
+            st.pydeck_chart(
+                pdk.Deck(
+                    layers=[layer],
+                    initial_view_state=view_state,
+                    map_style=pdk.map_styles.DARK,
+                    tooltip={"html": tooltip_data["text"]} # ใช้ 'html' เพื่อแสดงผลสวยขึ้น
+                ),
+                use_container_width=True
+            )
+            
+        with col_legend:
+            st.markdown("---")
+            # 💡 เรียกใช้ฟังก์ชัน Legend ที่สร้างไว้
+            _create_heatmap_legend(legend_title, legend_data)
+            st.markdown("---")
+
     else:
         st.error("Invalid layer_type!")
         return
 
-    # 3. สร้างและแสดงผล PyDeck Chart
-    if layer:
-        st.pydeck_chart(
-            pdk.Deck(
-                layers=[layer],
-                initial_view_state=view_state,
-                map_style=pdk.map_styles.DARK,
-                tooltip=tooltip_data # แสดงข้อมูลเมื่อนำเมาส์ไปชี้
-            ),
-            use_container_width=True # ทำให้แผนที่เต็มความกว้าง
-        )
-
      
 #--bubble
 def create_bubble_chart(df: pd.DataFrame):
-    min_year = int(df['year'].min())
-    max_year = int(df['year'].max())
-    selected_year = st.slider(
-        "Select Year",
-        min_value=min_year,
-        max_value=max_year,
-        value=max_year,
-        help="Move the slider to explore different years!"
-    )
 
-    df_year = df[df['year'] == selected_year].copy()
-    df_year["problem_intensity"] = df_year["problem_count_500m"] * df_year["angry_score"]
+    df["problem_intensity"] = df["Total_Problem_Count"] * df["Norm_Weight"]
 
-    df_group = df_year.groupby("district").agg(
-        avg_livability=("livability_score", "mean"),
+    df_group = df.groupby("district").agg(
+        avg_livability=("Livability_Score_10", "mean"),
         avg_problem_intensity=("problem_intensity", "mean"),
-        avg_price_sqm=("Avg_Price", "mean"),
-        project_count=("project_name", "count")
+        avg_price_sqm=("Avg_Price", "mean")
     ).reset_index()
 
     fig = px.scatter(
@@ -181,7 +235,7 @@ def create_bubble_chart(df: pd.DataFrame):
         size="avg_price_sqm",
         color="district",
         hover_name="district",
-        size_max=35,
+        size_max=65,
         opacity=0.85,
         color_discrete_sequence=px.colors.qualitative.Pastel
     )
@@ -194,8 +248,8 @@ def create_bubble_chart(df: pd.DataFrame):
 
     fig.update_traces(
         selector=dict(mode="markers"),
-        selected=dict(marker=dict(size=55, opacity=1)),  # เด่นมาก
-        unselected=dict(marker=dict(size=0.01, opacity=0))  # ซ่อนทั้งหมด
+        selected=dict(marker=dict(opacity=1)),  # เด่นมาก
+        unselected=dict(marker=dict(opacity=0))  # ซ่อนทั้งหมด
     )
 
     fig.update_layout(
@@ -204,7 +258,7 @@ def create_bubble_chart(df: pd.DataFrame):
             itemclick="toggleothers",     # คลิก legend = โชว์เฉพาะเขตนั้น
             itemdoubleclick="toggleothers"  # ดับเบิลคลิก = โชว์เฉพาะเขตนั้นเหมือนกัน
         ),
-        title=dict(text=f"Bubble Chart by District — {selected_year}", x=0.35),
+        title=dict(text=f"Bubble Chart by District — 2025", x=0.35),
         plot_bgcolor="#F9FAFF",
         paper_bgcolor="#F5F6FF",
         width=1000,

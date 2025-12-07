@@ -71,8 +71,9 @@ def show(df_condos, df_problems, df_district_summary):
 
     # --- 3. Bubble Chart ---
     st.header("Interactive Bubble Chart")
-    if not df_district_summary.empty and 'year' in df_district_summary.columns:
+    if not df_district_summary.empty: 
         create_bubble_chart(df_district_summary)
     else:
-        st.warning("Cannot display Bubble Chart: Data missing 'year' column or is empty.")
+        # อัปเดตข้อความเตือนให้สั้นลง
+        st.warning("🚨 Bubble Chart data is empty or missing.")
     st.markdown("---")
