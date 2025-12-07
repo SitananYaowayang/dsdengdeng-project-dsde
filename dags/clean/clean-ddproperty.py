@@ -9,12 +9,11 @@ from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 # ================= CONFIG =================
 INPUT_FILE = r'data\raw\ddproperty\ddproperty_bangkok_all_districts.csv'
 OUTPUT_FILE = r'data\processed\ddproperty\ddproperty_processed.csv'
-TEST_MODE = False       # 🟢 True = ลอง 5 แถว | 🔴 False = ทำจริง
+TEST_MODE = False 
 TEST_ROWS = 5
 SAVE_INTERVAL = 100
 # ==========================================
 
-# Dict รหัสไปรษณีย์ (ใช้ชื่อเขตแบบไม่มีคำนำหน้าเป็น Key)
 BKK_POSTCODES = {
     "พระนคร": "10200", "ดุสิต": "10300", "หนองจอก": "10530", "บางรัก": "10500", "บางเขน": "10220",
     "บางกะปิ": "10240", "ปทุมวัน": "10330", "ป้อมปราบศัตรูพ่าย": "10100", "พระโขนง": "10260", "มีนบุรี": "10510",
@@ -28,21 +27,16 @@ BKK_POSTCODES = {
     "คลองสามวา": "10510", "บางนา": "10260", "ทวีวัฒนา": "10170", "ทุ่งครุ": "10140", "บางบอน": "10150"
 }
 
-print("📂 Loading Data...")
+print("Loading Data...")
 df = pd.read_csv(INPUT_FILE)
 
-# 1. ลบข้อมูลซ้ำ
 df.drop_duplicates(subset=['url'], keep='first', inplace=True)
 
-# 2. ลบคอลัมน์ที่ไม่ต้องการทิ้ง
 cols_to_drop = ['district_code', 'district_search_term','floor']
 df.drop(columns=[c for c in cols_to_drop if c in df.columns], inplace=True)
 
-print(f"✅ Data count: {len(df)}")
+print(f"Data count: {len(df)}")
 
-# ------------------------------------------------
-
-# --- CLEANING FUNCTIONS ---
 def clean_money(val):
     if pd.isna(val) or str(val).strip() == '-': return np.nan
     val = str(val).replace('฿', '').replace(',', '').strip()
@@ -68,28 +62,20 @@ def clean_publish_date(text):
         except: return np.nan
     return np.nan
 
-# --- เพิ่มฟังก์ชันนี้เข้าไปในส่วน CLEANING FUNCTIONS ---
-
 def clean_bedroom(val):
     if pd.isna(val) or str(val).strip() == '-': return np.nan
     val_str = str(val).strip()
     
-    # 1. จัดการกรณี 'สตูดิโอ' หรือ 'Studio' -> ให้เป็น 0
     if 'สตูดิโอ' in val_str or 'studio' in val_str.lower():
         return 1.0
     
-    # 2. จัดการกรณีตัวเลขบวกกัน (เช่น 3+1, 7+4) หรือตัวเลขปกติ
-    # ใช้ Regex ดึงตัวเลขทั้งหมดออกมา แล้วจับบวกกัน
-    # วิธีนี้รองรับทั้ง "3", "3+1", "3 + 1" หรือแม้แต่ "Penthouse 4" (ถ้ามีเลข 4 หลุดมา)
     numbers = re.findall(r'\d+', val_str)
     if numbers:
-        # แปลงเป็น int แล้วบวกกัน (เช่น ['3', '1'] -> 4)
         total_rooms = sum(int(n) for n in numbers)
         return float(total_rooms)
         
     return np.nan
 
-# ----------------------------------------------------
 
 def extract_address_from_text(full_address):
     res = {'sub_district': np.nan, 'district': np.nan, 'province': 'กรุงเทพมหานคร', 'postcode': np.nan}
@@ -106,7 +92,6 @@ def extract_address_from_text(full_address):
         last_part = parts[-1]
         if 'กรุงเทพ' in last_part:
             if len(parts) >= 3:
-                # remove 'เขต'/'แขวง' first to standardize
                 res['district'] = parts[-2].replace('เขต', '').strip()
                 res['sub_district'] = parts[-3].replace('แขวง', '').strip()
         else:
@@ -121,7 +106,6 @@ def extract_address_from_text(full_address):
                 break
     return res
 
-# --- APPLY CLEANING ---
 print("🧹 Cleaning columns...")
 df['price'] = df['price'].apply(clean_money)
 df['price_per_sqm'] = df['price_per_sqm'].apply(clean_money)
@@ -134,27 +118,23 @@ cols_geo = ['coords', 'latitude', 'longitude', 'sub_district', 'district', 'prov
 for col in cols_geo:
     if col not in df.columns: df[col] = np.nan
 
-# --- GEOPY LOGIC (Hybrid) ---
 geolocator = Nominatim(user_agent="dd_hybrid_agent_final_v2", timeout=10)
 
 def process_geopy_hybrid(full_address):
     final_res = {k: np.nan for k in cols_geo}
     final_res['province'] = "กรุงเทพมหานคร"
     
-    # 1. Parse Text
     text_data = extract_address_from_text(full_address)
     final_res['sub_district'] = text_data['sub_district']
     final_res['district'] = text_data['district']
     final_res['postcode'] = text_data['postcode']
 
-    # 2. Search Full Address
     location = None
     try:
         if pd.notna(full_address):
             location = geolocator.geocode(f"{full_address}, Thailand", language='th')
     except: pass
 
-    # 3. Search Fallback (Keyword)
     if not location and pd.notna(final_res['district']):
         search_query = f"{final_res['sub_district'] or ''} {final_res['district']} กรุงเทพมหานคร"
         try:
@@ -171,26 +151,7 @@ def process_geopy_hybrid(full_address):
 
     return final_res
 
-# # --- 🔥 HELPER FUNCTIONS FOR PREFIX ---
-# def add_prefix_district(val):
-#     if pd.isna(val) or str(val).strip() == '': return np.nan
-#     val = str(val).strip()
-#     # ถ้ายังไม่มีคำว่า เขต ให้เติมเข้าไป
-#     if not val.startswith('เขต'):
-#         return f"เขต{val}"
-#     return val
-
-# def add_prefix_sub_district(val):
-#     if pd.isna(val) or str(val).strip() == '': return np.nan
-#     val = str(val).strip()
-#     # ถ้ายังไม่มีคำว่า แขวง ให้เติมเข้าไป
-#     if not val.startswith('แขวง'):
-#         return f"แขวง{val}"
-#     return val
-# # --------------------------------------
-
-# --- RUN PROCESS ---
-print(f"🌍 Starting Process (TEST_MODE={TEST_MODE})...")
+print(f"Starting Process (TEST_MODE={TEST_MODE})...")
 rows_to_process = df.head(TEST_ROWS) if TEST_MODE else df
 
 TARGET_COLUMNS = [
@@ -208,24 +169,14 @@ for index, row in rows_to_process.iterrows():
     
     if not TEST_MODE and (index + 1) % SAVE_INTERVAL == 0:
         df[TARGET_COLUMNS].to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
-        print(f"💾 Auto-saved at row {index}")
+        print(f"Auto-saved at row {index}")
     
     time.sleep(1)
 
-# # --- 🔥 FINAL STEP: ADD PREFIX & FORMATTING ---
-# print("✨ Finalizing: Adding prefixes (เขต/แขวง)...")
-# final_df = df.head(TEST_ROWS) if TEST_MODE else df
-
-# # เติมคำว่า เขต / แขวง
-# final_df['district'] = final_df['district'].apply(add_prefix_district)
-# final_df['sub_district'] = final_df['sub_district'].apply(add_prefix_sub_district)
-
-# กรอง Column สุดท้าย
 final_df = df.reindex(columns=TARGET_COLUMNS)
 
 final_df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
 
-print(f"\n✅ Done! Saved to {OUTPUT_FILE}")
+print(f"\nDone! Saved to {OUTPUT_FILE}")
 if TEST_MODE:
-    # โชว์ผลลัพธ์ให้ดู
     print(final_df[['publish_date', 'sub_district', 'district', 'postcode']].to_string())

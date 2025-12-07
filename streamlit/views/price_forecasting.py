@@ -84,7 +84,7 @@ def show(df_condos):
                     price_per_sqm = predicted_price / area_sqm if area_sqm > 0 else 0
                     st.metric(
                         label="Average Price per Sq.m.",
-                        value=f"฿{price_per_sqm:,.0f} / ตร.ม."
+                        value=f"฿{price_per_sqm:,.0f} / Sq.m."
                     )
 
             except Exception as e:

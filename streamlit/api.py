@@ -12,7 +12,7 @@ import os
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 CONDOS_FILE = "condo.csv"
-PROBLEM_FILE = "problem.csv"
+# PROBLEM_FILE = "problem.csv"
 PROBLEM_SUMMARY_FILE = "problem_summary.csv"
 DISTRICT_SUMMARY_FILE = "district_summary.csv"
 
@@ -41,24 +41,24 @@ df_condo = df_condo.where(pd.notnull(df_condo), None)
 print(f"✅ Loaded Condos: {len(df_condo)} rows")
 
 # 2. Load Problems
-print(f"📂 '{PROBLEM_FILE}', attempting to read...")
-try:
-    df_problem = pd.read_csv(PROBLEM_FILE, encoding='utf-8')
-    print("✅ Read with UTF-8")
-except UnicodeDecodeError:
-    print("⚠️ UTF-8 failed, retrying with TIS-620...")
-    df_problem = pd.read_csv(PROBLEM_FILE, encoding='tis-620')
-    print("✅ Read with TIS-620")
-# Cleaning
-if 'lat' in df_problem.columns and 'lon' in df_problem.columns:
-    df_problem['lat'] = pd.to_numeric(df_problem['lat'], errors='coerce')
-    df_problem['lon'] = pd.to_numeric(df_problem['lon'], errors='coerce')
-    initial_count = len(df_problem)
-    df_problem = df_problem.dropna(subset=['lat', 'lon'])
-    # print(f"Dropped {initial_count - len(df_problem)} rows with invalid coordinates")
-df_problem = df_problem.replace([np.inf, -np.inf], np.nan)
-df_problem = df_problem.where(pd.notnull(df_problem), None)
-print(f"✅ Loaded Problems: {len(df_problem)} rows")
+# print(f"📂 '{PROBLEM_FILE}', attempting to read...")
+# try:
+#     df_problem = pd.read_csv(PROBLEM_FILE, encoding='utf-8')
+#     print("✅ Read with UTF-8")
+# except UnicodeDecodeError:
+#     print("⚠️ UTF-8 failed, retrying with TIS-620...")
+#     df_problem = pd.read_csv(PROBLEM_FILE, encoding='tis-620')
+#     print("✅ Read with TIS-620")
+# # Cleaning
+# if 'lat' in df_problem.columns and 'lon' in df_problem.columns:
+#     df_problem['lat'] = pd.to_numeric(df_problem['lat'], errors='coerce')
+#     df_problem['lon'] = pd.to_numeric(df_problem['lon'], errors='coerce')
+#     initial_count = len(df_problem)
+#     df_problem = df_problem.dropna(subset=['lat', 'lon'])
+#     # print(f"Dropped {initial_count - len(df_problem)} rows with invalid coordinates")
+# df_problem = df_problem.replace([np.inf, -np.inf], np.nan)
+# df_problem = df_problem.where(pd.notnull(df_problem), None)
+# print(f"✅ Loaded Problems: {len(df_problem)} rows")
 
 # 3. Load Problem Summary
 print(f"📂 '{PROBLEM_SUMMARY_FILE}', attempting to read...")
@@ -100,15 +100,15 @@ def get_condo_data(district: Optional[str] = None):
         data = data[data['district'] == district]
     return data.to_dict(orient="records")
 
-@app.get("/problem_data")
-def get_problem_data(limit: int = 20000):
-    # Get all Traffy Fondue
-    if df_problem.empty:
-        return []
-    # limit = 0 -> All
-    if limit == 0 or limit >= len(df_problem):
-        return df_problem.to_dict(orient="records")
-    return df_problem.sample(n=limit).to_dict(orient="records")
+# @app.get("/problem_data")
+# def get_problem_data(limit: int = 20000):
+#     # Get all Traffy Fondue
+#     if df_problem.empty:
+#         return []
+#     # limit = 0 -> All
+#     if limit == 0 or limit >= len(df_problem):
+#         return df_problem.to_dict(orient="records")
+#     return df_problem.sample(n=limit).to_dict(orient="records")
 
 @app.get("/problem_summary")
 def get_problem_summary():
