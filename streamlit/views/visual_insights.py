@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import pydeck as pdk
-from viz_components import create_single_layer_heatmap, create_bubble_chart, create_district_column_map # create_grid_map,
+from viz_components import create_single_layer_heatmap, create_bubble_chart, create_district_column_map, create_price_column_map # create_grid_map,
 
 def show(df_district_summary):
     # --- 1. Heatmap ---
@@ -40,32 +40,28 @@ def show(df_district_summary):
             st.pydeck_chart(map_problems)
             
             # (Option) แสดงตารางข้อมูลประกอบ
-            with st.expander("ดูข้อมูลรายเขต"):
+            with st.expander("Show District Table"):
                 st.dataframe(df_district_summary.sort_values('Total_Problems', ascending=False))
 
             st.caption("Data Source: Real Traffy Fondue Data (Aggregated by District)")
         else:
-            st.info("ไม่พบข้อมูลปัญหา (df_problems is empty)")
+            st.info("No problem data found 🙅‍♂️ (df_problems is empty)")
 
-    # Tab 2: Condominium Pricing (Mock Data)
+    # Tab 2: 3D Condo Price Density
     with tab2:
-        st.subheader("Condominium Pricing (Price per Square Meter)")
-        # if not df_condos.empty:
-        #     cell_size_price = st.slider("Grid Size (meters) - Price", 100, 1000, 300, 50, key="grid_price")
-            
-        #     map_price = create_grid_map(
-        #         df_condos, 
-        #         center_lat, 
-        #         center_lon, 
-        #         cell_size=cell_size_price,
-        #         target_col='price_sqm',
-        #         aggregation="MEAN",
-        #         color_preset="green"
-        #     )
-        #     st.pydeck_chart(map_price)
-        #     st.caption("Data Source: Mock Condominium Data")
-        # else:
-        #     st.info("ไม่พบข้อมูลคอนโด (df_condos is empty)")
+        st.subheader("Condominium Pricing (Price per Sq.M.)")
+
+        if not df_district_summary.empty:
+            map_price_3d = create_price_column_map(df_district_summary)
+            st.pydeck_chart(map_price_3d)
+
+            with st.expander("Show Condo Table"):
+                st.dataframe(df_district_summary[['district', 'Avg_Price_Per_SqM']].sort_values('Avg_Price_Per_SqM', ascending=False))
+
+            st.caption("Data Source: DDProperty Data")
+        else:
+            st.info("No condominium data found 🙅‍♂️ (df_condos is empty)")
+
 
     st.markdown("---")
 

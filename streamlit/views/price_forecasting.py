@@ -97,7 +97,7 @@ def show(df_condos):
 
     # --- 5. Supporting Data ---
     # Display project data in this district for comparison (Reference)
-    with st.expander(f"🔎 View reference condos in {selected_district} district"):
+    with st.expander(f"🔎 View reference condominiums in {selected_district} district"):
         df_ref = df_condos[df_condos['district_original'] == selected_district]
         if not df_ref.empty:
             st.dataframe(

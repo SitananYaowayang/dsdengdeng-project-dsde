@@ -79,7 +79,7 @@ def create_single_layer_heatmap(df, layer_type="price"):
         rounded_max = np.ceil(p_max / order) * order
 
         selected_range = st.slider(
-            "ช่วงราคา (บาท ต่อ ตร.ม.):",
+            "Price range (THB per sq.m.)",
             min_value=float(rounded_min),
             max_value=float(rounded_max),
             value=(
@@ -159,30 +159,30 @@ def create_single_layer_heatmap(df, layer_type="price"):
     legend_title = ""
     legend_data = []
     
-    legend_title = "ระดับความเข้มข้นของค่า"
+    legend_title = "Heat Intensity Scale"
     
     if layer_type == "price":
-        # ราคา
+        # Price
         legend_data = [
-            ("#FFFFFF", "ราคาต่ำสุด / ความหนาแน่นต่ำ"),
-            ("#FFFF00", "ราคาปานกลาง"),
-            ("#FF4500", "ราคาสูงสุด / ความหนาแน่นสูง"),
+            ("#FFFFFF", "Lowest Price / Low Density"),
+            ("#FFFF00", "Medium Price"),
+            ("#FF4500", "Highest Price / High Density"),
         ]
-        
+
     elif layer_type == "problem":
-        # ปัญหา
+        # Urban Problems
         legend_data = [
-            ("#FFFFFF", "ปัญหาพบน้อย"),
-            ("#FFFF00", "ปัญหาปานกลาง"),
-            ("#FF4500", "ปัญหาพบมาก"),
+            ("#FFFFFF", "Low Problem Intensity"),
+            ("#FFFF00", "Moderate Problem Intensity"),
+            ("#FF4500", "High Problem Intensity"),
         ]
-        
+
     elif layer_type == "livability":
-        # คะแนนคุณภาพชีวิต (Livability Score)
+        # Livability Score
         legend_data = [
-            ("#FFFFFF", "คะแนนต่ำ (คุณภาพชีวิตแย่)"),
-            ("#FFFF00", "คะแนนปานกลาง"),
-            ("#FF4500", "คะแนนสูง (คุณภาพชีวิตดี)"),
+            ("#FFFFFF", "Low Score (Poor Livability)"),
+            ("#FFFF00", "Medium Score"),
+            ("#FF4500", "High Score (Good Livability)"),
         ]
 
     # 4. สร้างและแสดงผล PyDeck Chart พร้อม Legend
@@ -338,6 +338,66 @@ def create_district_column_map(df, center_lat=13.75398, center_lon=100.50144, co
     return pdk.Deck(
         layers=[layer],
         initial_view_state=view_state,
+        tooltip=tooltip
+    )
+
+def create_price_column_map(df, center_lat=13.7563, center_lon=100.5018):
+    """
+    สร้างแผนที่ 3D Column Chart แสดงค่าเฉลี่ยราคา ตร.ม.
+    df ต้องมี columns ['lat', 'lon', 'Avg_Price_Per_SqM']
+    """
+
+    df = df.copy()
+    df['Avg_Price_Per_SqM'] = pd.to_numeric(df['Avg_Price_Per_SqM'], errors='coerce')
+    df = df[df['Avg_Price_Per_SqM'] > 0].dropna(subset=['Avg_Price_Per_SqM'])
+
+    # Color scale: เขียวอ่อน -> เขียวเข้ม
+    color_range = [
+        [237, 248, 251, 200],
+        [178, 226, 226, 200],
+        [102, 194, 164, 200],
+        [44, 162, 95, 200],
+        [0, 109, 44, 200]
+    ]
+
+    vmin = df['Avg_Price_Per_SqM'].min()
+    vmax = df['Avg_Price_Per_SqM'].max()
+
+    # สร้างสีตามระดับราคา
+    df['fill_color'] = df['Avg_Price_Per_SqM'].apply(
+        lambda x: map_value_to_color(x, vmin, vmax, color_range)
+    )
+
+    layer = pdk.Layer(
+        "ColumnLayer",
+        df,
+        get_position=['lon', 'lat'],
+        get_elevation='Avg_Price_Per_SqM',
+        get_fill_color='fill_color',
+        elevation_scale=0.2,  # ลดไม่ให้สูงเวอร์
+        radius=800,  # เส้นผ่านศูนย์กลาง column
+        pickable=True,
+        auto_highlight=True,
+        extruded=True,
+    )
+
+    view_state = pdk.ViewState(
+        latitude=center_lat,
+        longitude=center_lon,
+        zoom=9,
+        pitch=60,
+        bearing=0
+    )
+
+    tooltip = {
+        "html": "<b>Price:</b> {Avg_Price_Per_SqM} ฿/Sq.M.",
+        "style": {"color": "white", "backgroundColor": "#333"}
+    }
+
+    return pdk.Deck(
+        layers=[layer],
+        initial_view_state=view_state,
+        map_style=pdk.map_styles.DARK,
         tooltip=tooltip
     )
 
