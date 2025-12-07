@@ -69,14 +69,14 @@ def create_single_layer_heatmap(df, layer_type="price"):
         st.subheader("Condominium Pricing (Price per Sq.M.)")
         st.caption("Displays the average selling price per square meter and highlights price trends for condo units, aiding in market assessment and purchase affordability.")
 
-        df['weight_value'] = df['Avg_Price']
+        df['weight_value'] = df['Avg_Price_Per_SqM']
         weight_column = 'weight_value'
-        df['Avg_Price'] = pd.to_numeric(df['Avg_Price'], errors='coerce')
+        df['Avg_Price_Per_SqM'] = pd.to_numeric(df['Avg_Price_Per_SqM'], errors='coerce')
 
         # Drop invalid values (<=0 or NaN)
-        df = df[df['Avg_Price'] > 0].dropna(subset=['Avg_Price'])
-        p_min = df['Avg_Price'].min()
-        p_max = df['Avg_Price'].max()
+        df = df[df['Avg_Price_Per_SqM'] > 0].dropna(subset=['Avg_Price_Per_SqM'])
+        p_min = df['Avg_Price_Per_SqM'].min()
+        p_max = df['Avg_Price_Per_SqM'].max()
 
         # หาความใหญ่ของเลข เพื่อให้ปัดเป็นหลักพัน
         order = 10 ** (int(np.log10(p_min)) - 1)
@@ -89,14 +89,14 @@ def create_single_layer_heatmap(df, layer_type="price"):
             min_value=float(rounded_min),
             max_value=float(rounded_max),
             value=(
-                float(df['Avg_Price'].quantile(0.2)),
-                float(df['Avg_Price'].quantile(0.7))
+                float(df['Avg_Price_Per_SqM'].quantile(0.2)),
+                float(df['Avg_Price_Per_SqM'].quantile(0.7))
             ),
             step=float(order),
         )
         df_filtered = df[
-            (df['Avg_Price'] >= selected_range[0]) &
-            (df['Avg_Price'] <= selected_range[1])
+            (df['Avg_Price_Per_SqM'] >= selected_range[0]) &
+            (df['Avg_Price_Per_SqM'] <= selected_range[1])
         ].copy()
 
         if df_filtered.empty:
@@ -113,14 +113,15 @@ def create_single_layer_heatmap(df, layer_type="price"):
             threshold=0.3, # ใช้ในการกำหนดความเข้มข้น
             radius_pixels=30,
         )
-        tooltip_data = {"text": "Avg Price: {Avg_Price}"}
+        tooltip_data = {"text": "Avg Price: {Avg_Price_Per_SqM}"}
 
     elif layer_type == "problem":
         st.subheader("Community Challenges (Problem Intensity)")
         st.caption("Visualizes the reported frequency and severity of problems like traffic, noise, and safety incidents that impact residents' daily life.")     
 
         # คำนวณค่าน้ำหนัก: Total_Problems * Norm_Weight
-        df['weight_value'] = df['Total_Problems'] * df['Norm_Weight']
+        #df['weight_value'] = df['Total_Problems'] * df['Norm_Weight']
+        df['weight_value'] = df['Avg_Severity']
         weight_column = 'weight_value'
 
         # PyDeck Heatmap Layer
@@ -139,8 +140,8 @@ def create_single_layer_heatmap(df, layer_type="price"):
         st.subheader("Overall Livability Score")
         st.caption("Presents a composite index score representing the overall quality of life, based on amenities, green space access, and public transport.")
         
-        # ใช้ Livability_Score_10 เป็นค่าน้ำหนัก
-        df['weight_value'] = df['Livability_Score_10']
+        # ใช้ Livability_Score เป็นค่าน้ำหนัก
+        df['weight_value'] = df['Livability_Score']
         weight_column = 'weight_value'
 
         # PyDeck Heatmap Layer
@@ -156,7 +157,7 @@ def create_single_layer_heatmap(df, layer_type="price"):
             threshold=0.5,
             radius_pixels=30,
         )
-        tooltip_data = {"text": "Livability Score: {Livability_Score_10}"}
+        tooltip_data = {"text": "Livability Score: {Livability_Score}"}
 
         # 3. กำหนดข้อมูล Legend
     
@@ -220,11 +221,11 @@ def create_single_layer_heatmap(df, layer_type="price"):
 #--bubble
 def create_bubble_chart(df: pd.DataFrame):
 
-    df["problem_intensity"] = df["Total_Problem_Count"] * df["Norm_Weight"]
-
+    #df["problem_intensity"] = df["Total_Problem_Count"] * df["Norm_Weight"]
+    #df["problem_intensity"] = df['Avg_Severity']
     df_group = df.groupby("district").agg(
-        avg_livability=("Livability_Score_10", "mean"),
-        avg_problem_intensity=("problem_intensity", "mean"),
+        avg_livability=("Livability_Score", "mean"),
+        avg_problem_intensity=("Avg_Severity", "mean"),
         avg_price_sqm=("Avg_Price", "mean")
     ).reset_index()
 
@@ -300,7 +301,7 @@ def create_district_column_map(df, center_lat=13.7563, center_lon=100.5018, colo
             [237, 248, 251, 200], [178, 226, 226, 200],
             [102, 194, 164, 200], [44, 162, 95, 200], [0, 109, 44, 200]
         ]
-        target_col = "Livability_Score_10" # สมมติใช้ column นี้ถ้าเป็นสีเขียว
+        target_col = "Livability_Score" # สมมติใช้ column นี้ถ้าเป็นสีเขียว
         elevation_scale = 10
 
     # 2. เตรียมข้อมูลสี (Color Mapping)
