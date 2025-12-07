@@ -347,6 +347,66 @@ def create_district_column_map(df, center_lat=13.7563, center_lon=100.5018, colo
         tooltip=tooltip
     )
 
+def create_price_column_map(df, center_lat=13.7563, center_lon=100.5018):
+    """
+    สร้างแผนที่ 3D Column Chart แสดงค่าเฉลี่ยราคา ตร.ม.
+    df ต้องมี columns ['lat', 'lon', 'Avg_Price_Per_SqM']
+    """
+
+    df = df.copy()
+    df['Avg_Price_Per_SqM'] = pd.to_numeric(df['Avg_Price_Per_SqM'], errors='coerce')
+    df = df[df['Avg_Price_Per_SqM'] > 0].dropna(subset=['Avg_Price_Per_SqM'])
+
+    # Color scale: เขียวอ่อน -> เขียวเข้ม
+    color_range = [
+        [237, 248, 251, 200],
+        [178, 226, 226, 200],
+        [102, 194, 164, 200],
+        [44, 162, 95, 200],
+        [0, 109, 44, 200]
+    ]
+
+    vmin = df['Avg_Price_Per_SqM'].min()
+    vmax = df['Avg_Price_Per_SqM'].max()
+
+    # สร้างสีตามระดับราคา
+    df['fill_color'] = df['Avg_Price_Per_SqM'].apply(
+        lambda x: map_value_to_color(x, vmin, vmax, color_range)
+    )
+
+    layer = pdk.Layer(
+        "ColumnLayer",
+        df,
+        get_position=['lon', 'lat'],
+        get_elevation='Avg_Price_Per_SqM',
+        get_fill_color='fill_color',
+        elevation_scale=0.2,  # ลดไม่ให้สูงเวอร์
+        radius=800,  # เส้นผ่านศูนย์กลาง column
+        pickable=True,
+        auto_highlight=True,
+        extruded=True,
+    )
+
+    view_state = pdk.ViewState(
+        latitude=center_lat,
+        longitude=center_lon,
+        zoom=9,
+        pitch=60,
+        bearing=0
+    )
+
+    tooltip = {
+        "html": "<b>Price:</b> {Avg_Price_Per_SqM} ฿/Sq.M.",
+        "style": {"color": "white", "backgroundColor": "#333"}
+    }
+
+    return pdk.Deck(
+        layers=[layer],
+        initial_view_state=view_state,
+        map_style=pdk.map_styles.DARK,
+        tooltip=tooltip
+    )
+
 # --- Prediction Line Chart ---
 def create_prediction_chart(current_price, selected_problems):
     """
