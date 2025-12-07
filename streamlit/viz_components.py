@@ -350,7 +350,7 @@ def create_problem_distribution_chart(df_summary_problem):
 
     # 4. Bars + Text
     chart = (bars + text).properties(
-        title="Distribution of Reported Issues (Traffy Fondue)",
+        title="Distribution of Reported Problems (Traffy Fondue)",
         height=max(400, len(type_sums) * 45)
     ).interactive(bind_x=False)
 
