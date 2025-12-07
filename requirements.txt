@@ -29,3 +29,29 @@ seaborn
 geopandas
 folium             # ทำแผนที่ interactive
 mapclassify        # บางฟังก์ชันของ geopandas ใช้ตัวนี้
+# --- Data Manipulation ---
+pandas
+numpy
+openpyxl                 # จำเป็นสำหรับให้ pandas อ่าน/เขียนไฟล์ Excel
+
+# --- Web Scraping & Selenium ---
+requests
+beautifulsoup4
+selenium
+webdriver-manager        # ตัวช่วยโหลด Driver อัตโนมัติ (แก้ปัญหา version chrome ไม่ตรง)
+undetected-chromedriver  # ตัวช่วยให้ Selenium เนียนหลบ Bot (สำคัญมากสำหรับเว็บอสังหาฯ)
+
+# --- Big Data & Pipeline ---
+pyspark
+          # *หมายเหตุ: บน Windows ติดตั้งยาก แนะนำให้ใช้ Docker หรือ WSL
+
+# --- AI / Machine Learning ---
+scikit-learn
+scipy
+
+# --- Visualization & Geospatial ---
+matplotlib
+seaborn
+geopandas
+folium                   # แนะนำเพิ่ม! เอาไว้พลอตแผนที่ Interactive สวยๆ (ทำงานคู่ Geopandas ดีมาก)
+mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
