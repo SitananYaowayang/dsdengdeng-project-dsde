@@ -40,12 +40,12 @@ def show(df_condos, df_problems, df_district_summary):
             st.pydeck_chart(map_problems)
             
             # (Option) แสดงตารางข้อมูลประกอบ
-            with st.expander("ดูข้อมูลรายเขต"):
+            with st.expander("Show District Table"):
                 st.dataframe(df_district_summary.sort_values('Total_Problems', ascending=False))
 
             st.caption("Data Source: Real Traffy Fondue Data (Aggregated by District)")
         else:
-            st.info("ไม่พบข้อมูลปัญหา (df_problems is empty)")
+            st.info("No problem data found 🙅‍♂️ (df_problems is empty)")
 
     # Tab 2: 3D Condo Price Density
     with tab2:
@@ -55,12 +55,12 @@ def show(df_condos, df_problems, df_district_summary):
             map_price_3d = create_price_column_map(df_district_summary)
             st.pydeck_chart(map_price_3d)
 
-            with st.expander("ดูข้อมูลคอนโด"):
+            with st.expander("Show Condo Table"):
                 st.dataframe(df_district_summary[['district', 'Avg_Price_Per_SqM']].sort_values('Avg_Price_Per_SqM', ascending=False))
 
             st.caption("Data Source: DDProperty Data")
         else:
-            st.info("ไม่พบข้อมูลคอนโด (df_condos is empty)")
+            st.info("No condominium data found 🙅‍♂️ (df_condos is empty)")
 
 
     st.markdown("---")

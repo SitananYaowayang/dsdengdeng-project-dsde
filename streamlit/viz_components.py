@@ -85,7 +85,7 @@ def create_single_layer_heatmap(df, layer_type="price"):
         rounded_max = np.ceil(p_max / order) * order
 
         selected_range = st.slider(
-            "ช่วงราคา (บาท ต่อ ตร.ม.):",
+            "Price range (THB per sq.m.)",
             min_value=float(rounded_min),
             max_value=float(rounded_max),
             value=(
@@ -165,30 +165,30 @@ def create_single_layer_heatmap(df, layer_type="price"):
     legend_title = ""
     legend_data = []
     
-    legend_title = "ระดับความเข้มข้นของค่า"
+    legend_title = "Heat Intensity Scale"
     
     if layer_type == "price":
-        # ราคา
+        # Price
         legend_data = [
-            ("#FFFFFF", "ราคาต่ำสุด / ความหนาแน่นต่ำ"),
-            ("#FFFF00", "ราคาปานกลาง"),
-            ("#FF4500", "ราคาสูงสุด / ความหนาแน่นสูง"),
+            ("#FFFFFF", "Lowest Price / Low Density"),
+            ("#FFFF00", "Medium Price"),
+            ("#FF4500", "Highest Price / High Density"),
         ]
-        
+
     elif layer_type == "problem":
-        # ปัญหา
+        # Urban Problems
         legend_data = [
-            ("#FFFFFF", "ปัญหาพบน้อย"),
-            ("#FFFF00", "ปัญหาปานกลาง"),
-            ("#FF4500", "ปัญหาพบมาก"),
+            ("#FFFFFF", "Low Problem Intensity"),
+            ("#FFFF00", "Moderate Problem Intensity"),
+            ("#FF4500", "High Problem Intensity"),
         ]
-        
+
     elif layer_type == "livability":
-        # คะแนนคุณภาพชีวิต (Livability Score)
+        # Livability Score
         legend_data = [
-            ("#FFFFFF", "คะแนนต่ำ (คุณภาพชีวิตแย่)"),
-            ("#FFFF00", "คะแนนปานกลาง"),
-            ("#FF4500", "คะแนนสูง (คุณภาพชีวิตดี)"),
+            ("#FFFFFF", "Low Score (Poor Livability)"),
+            ("#FFFF00", "Medium Score"),
+            ("#FF4500", "High Score (Good Livability)"),
         ]
 
     # 4. สร้างและแสดงผล PyDeck Chart พร้อม Legend
