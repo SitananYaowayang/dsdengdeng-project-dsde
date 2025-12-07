@@ -10,11 +10,11 @@ API_URL = "http://127.0.0.1:8000"
 def load_model():
     return CondoPricePredictor()
 try:
-    ai = load_model()
-    district_list = list(ai.df_scores['district'].unique())
+    AI = load_model()
+    district_list = list(AI.df_scores.index.unique())
     district_list.sort()     
 except Exception as e:
-    st.error(f"An error occurred while loading the model: {e}")
+    st.error(f"An error occurred while loading the model data: {e}")
     st.stop()
 
 @st.cache_data(ttl=3600) # Cache 1 hr
@@ -90,7 +90,7 @@ def _fetch_district_summary_data():
             if df.empty:
                 return df
             
-            cols_num = ['lat', 'lon', 'Total_Problems', 'Livability_Score_10', 'Avg_Price', 'Avg_Price_Per_SqM', 'Avg_Size']
+            cols_num = ['lat', 'lon', 'Total_Listings', 'Total_Problems', 'Livability_Score_10', 'Avg_Price', 'Avg_Price_Per_SqM', 'Avg_Size', 'Avg_Severity']
             for c in cols_num:
                 if c in df.columns:
                     df[c] = pd.to_numeric(df[c], errors='coerce')
