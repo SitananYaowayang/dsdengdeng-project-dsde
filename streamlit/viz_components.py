@@ -119,8 +119,8 @@ def create_single_layer_heatmap(df, layer_type="price"):
         st.subheader("Community Challenges (Problem Intensity)")
         st.caption("Visualizes the reported frequency and severity of problems like traffic, noise, and safety incidents that impact residents' daily life.")     
 
-        # คำนวณค่าน้ำหนัก: Total_Problem_Count * Norm_Weight
-        df['weight_value'] = df['Total_Problem_Count'] * df['Norm_Weight']
+        # คำนวณค่าน้ำหนัก: Total_Problems * Norm_Weight
+        df['weight_value'] = df['Total_Problems'] * df['Norm_Weight']
         weight_column = 'weight_value'
 
         # PyDeck Heatmap Layer
@@ -280,7 +280,7 @@ def map_value_to_color(value, vmin, vmax, color_range):
 def create_district_column_map(df, center_lat=13.7563, center_lon=100.5018, color_preset="red"):
     """
     สร้างแผนที่ 3D Column Chart แบ่งตามเขต
-    df: DataFrame ที่มี columns ['lat', 'lon', 'Total_Problem_Count', 'district']
+    df: DataFrame ที่มี columns ['lat', 'lon', 'Total_Problems', 'district']
     """
     # 1. กำหนด Palette
     if color_preset == "red": 
@@ -292,7 +292,7 @@ def create_district_column_map(df, center_lat=13.7563, center_lon=100.5018, colo
             [227, 26, 28, 200],   
             [189, 0, 38, 200]     
         ]
-        target_col = "Total_Problem_Count"
+        target_col = "Total_Problems"
         elevation_scale = 10
         
     else: # Default หรือ Green (สำหรับ Livability/Price)

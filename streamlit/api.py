@@ -11,23 +11,37 @@ import os
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-CONDOS_FILE = "mock_condos.csv"
+CONDOS_FILE = "condo.csv"
 PROBLEM_FILE = "problem.csv"
 PROBLEM_SUMMARY_FILE = "problem_summary.csv"
 DISTRICT_SUMMARY_FILE = "district_summary.csv"
 
 # --- LOAD DATA (Run once when API starts) ---
-# 1. Load Mock Condos
+# 1. Load Condos
+print(f"📂 '{CONDOS_FILE}', attempting to read...")
 try:
-    df_condo = pd.read_csv(CONDOS_FILE)
-    # Clean NaN to prevent JSON errors
-    df_condo = df_condo.fillna("") 
-except Exception as e:
-    print(f"❌ Error loading problems: {e}")
-    df_condo = pd.DataFrame()
+    df_condo = pd.read_csv(CONDOS_FILE, encoding='utf-8')
+    print("✅ Read with UTF-8")
+except UnicodeDecodeError:
+    print("⚠️ UTF-8 failed, retrying with TIS-620...")
+    df_condo = pd.read_csv(CONDOS_FILE, encoding='tis-620')
+    print("✅ Read with TIS-620")
+# Cleaning
+if 'district_cleaned' in df_condo.columns:
+    df_condo.rename(columns={'district_cleaned': 'district_original'}, inplace=True)
+    # The first 'district' column in the mock data is the one to keep, let's just clean the numeric types
+# Ensure key numeric columns are properly typed
+numeric_cols = ['price', 'price_per_sqm', 'usable_area', 'bedroom', 'restroom', 'Livability_Score_10']
+for col in numeric_cols:
+    if col in df_condo.columns:
+        df_condo[col] = pd.to_numeric(df_condo[col], errors='coerce')
+# Clean up infinite values and replace with None (for JSON serialization)
+df_condo = df_condo.replace([np.inf, -np.inf], np.nan)
+df_condo = df_condo.where(pd.notnull(df_condo), None)
+print(f"✅ Loaded Condos: {len(df_condo)} rows")
 
 # 2. Load Problems
-print(f"📂 Found '{PROBLEM_FILE}', attempting to read...")
+print(f"📂 '{PROBLEM_FILE}', attempting to read...")
 try:
     df_problem = pd.read_csv(PROBLEM_FILE, encoding='utf-8')
     print("✅ Read with UTF-8")
@@ -47,25 +61,26 @@ df_problem = df_problem.where(pd.notnull(df_problem), None)
 print(f"✅ Loaded Problems: {len(df_problem)} rows")
 
 # 3. Load Problem Summary
-print(f"📂 Found '{PROBLEM_SUMMARY_FILE}', attempting to read...")
+print(f"📂 '{PROBLEM_SUMMARY_FILE}', attempting to read...")
 try:
-    df_prob_summary = pd.read_csv(PROBLEM_SUMMARY_FILE)
-    print("✅ Loaded Problem Summary")
-except Exception as e:
-    print(f"❌ Error loading problem summary: {e}")
-    df_prob_summary = pd.DataFrame()
+    df_prob_summary = pd.read_csv(PROBLEM_SUMMARY_FILE, encoding='utf-8')
+    print("✅ Read with UTF-8")
+except UnicodeDecodeError:
+    print("⚠️ UTF-8 failed, retrying with TIS-620...")
+    df_prob_summary = pd.read_csv(PROBLEM_SUMMARY_FILE, encoding='tis-620')
+    print("✅ Read with TIS-620")
+print(f"✅ Loaded Problem Summary: {len(df_prob_summary)} rows")
 
 # 4. Load District Summary
-print(f"📂 Found '{DISTRICT_SUMMARY_FILE}', attempting to read...")
+print(f"📂 '{DISTRICT_SUMMARY_FILE}', attempting to read...")
 try:
-    df_dist_summary = pd.read_csv(DISTRICT_SUMMARY_FILE, encoding='utf-8') 
+    df_dist_summary = pd.read_csv(DISTRICT_SUMMARY_FILE, encoding='utf-8')
     print("✅ Read with UTF-8")
 except UnicodeDecodeError:
     print("⚠️ UTF-8 failed, retrying with TIS-620...")
     df_dist_summary = pd.read_csv(DISTRICT_SUMMARY_FILE, encoding='tis-620')
     print("✅ Read with TIS-620")
-    
-cols_num = ['lat', 'lon', 'Total_Problem_Count', 'Livability_Score_10', 'Avg_Price']
+cols_num = ['lat', 'lon', 'Total_Problems', 'Livability_Score_10', 'Avg_Price_Per_SqM']
 for c in cols_num:
     if c in df_dist_summary.columns:
         if df_dist_summary[c].dtype == object:

@@ -4,10 +4,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import folium 
-from streamlit_folium import st_folium
 import requests
-import io # ใช้สำหรับกรณีที่ API ส่งไฟล์ CSV มาแทน JSON
+import io
 
 from styles import CUSTOM_CSS
 from data_loader import _fetch_condo_data, _fetch_problem_data, _fetch_problem_summary_data, _fetch_district_summary_data
@@ -38,12 +36,6 @@ if df_condos.empty | df_problems.empty:
     except:
         st.error("🚨 Failed to load data (API Down & No CSV found)")
         st.stop()
-
-# Prepare Data
-df_condos = df_condos.copy()
-# Calculate center map
-center_lat = df_condos['lat'].mean() if not df_condos.empty else 13.737778
-center_lon = df_condos['lon'].mean() if not df_condos.empty else 100.5050
 
 # --- Sidebar ---
 with st.sidebar:

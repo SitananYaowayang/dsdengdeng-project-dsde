@@ -33,7 +33,7 @@ def _fetch_condo_data():
             data = response.json()
             df = pd.DataFrame(response.json())
             # Convert numeric columns explicitly
-            cols_num = ['lat', 'lon', 'price_sqm']
+            cols_num = ['lat', 'lon', 'price_per_sqm', 'usable_area', 'bedroom', 'restroom']
             for c in cols_num:
                 if c in df.columns: df[c] = pd.to_numeric(df[c], errors='coerce')
             return df
@@ -90,7 +90,7 @@ def _fetch_district_summary_data():
             if df.empty:
                 return df
             
-            cols_num = ['lat', 'lon', 'Total_Problem_Count', 'Livability_Score_10']
+            cols_num = ['lat', 'lon', 'Total_Problems', 'Livability_Score_10', 'Avg_Price', 'Avg_Price_Per_SqM', 'Avg_Size']
             for c in cols_num:
                 if c in df.columns:
                     df[c] = pd.to_numeric(df[c], errors='coerce')
