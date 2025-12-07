@@ -1,41 +1,38 @@
-<<<<<<< HEAD
+# --- Core / Config ---
+python-dotenv
+pymongo
+
 # --- Data Manipulation ---
 pandas
 numpy
-openpyxl                 # จำเป็นสำหรับให้ pandas อ่าน/เขียนไฟล์ Excel
+openpyxl
 
 # --- Web Scraping & Selenium ---
 requests
 beautifulsoup4
 selenium
-webdriver-manager        # ตัวช่วยโหลด Driver อัตโนมัติ (แก้ปัญหา version chrome ไม่ตรง)
-undetected-chromedriver  # ตัวช่วยให้ Selenium เนียนหลบ Bot (สำคัญมากสำหรับเว็บอสังหาฯ)
+webdriver-manager
+undetected-chromedriver
 
 # --- Big Data & Pipeline ---
 pyspark
-          # *หมายเหตุ: บน Windows ติดตั้งยาก แนะนำให้ใช้ Docker หรือ WSL
+papermill
+nbconvert
 
 # --- AI / Machine Learning ---
 scikit-learn
 scipy
+xgboost
+joblib
 
 # --- Visualization & Geospatial ---
 matplotlib
 seaborn
 geopandas
-folium                   # แนะนำเพิ่ม! เอาไว้พลอตแผนที่ Interactive สวยๆ (ทำงานคู่ Geopandas ดีมาก)
-mapclassify              # จำเป็นสำหรับ Geopandas บางฟังก์ชัน
+folium
+mapclassify
 
-xgboost
-
-# 2. ตัวโหลดไฟล์: ใช้คำสั่ง joblib.load() เพื่อดึงโมเดลออกมา
-joblib
-
-# 3. สำหรับทำ Web API (ถ้าจะใช้คู่มือ FastAPI ที่ให้ไป)
+# --- Web API ---
 fastapi
 uvicorn
 pydantic
-||||||| 98e605f
-=======
-pip install -q -U google-generativeai
->>>>>>> dc2ca3b0ec46f5169abf6c9feab7c9c5a70b9279
