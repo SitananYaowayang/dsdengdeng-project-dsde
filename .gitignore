@@ -1,8 +1,5 @@
-# ===========================
-# 1. Data & System Files (ของเดิม)
-# ===========================
+# 1. Data & System Files
 data/
-*.csv
 *.xlsx
 *.json
 
@@ -11,9 +8,7 @@ __pycache__/
 *.pyc
 .DS_Store
 
-# ===========================
-# 2. Environment & Secrets (สำคัญมาก)
-# ===========================
+# 2. Environment & Secrets
 venv/
 env/
 .env
@@ -24,37 +19,31 @@ dags/credentials.json
 .vscode/
 .idea/
 
-# ===========================
-# 3. Docker & Airflow (ส่วนที่เพิ่ม)
-# ===========================
+# 3. Docker & Airflow
 
-# Ignore Airflow Logs (ไฟล์ Log ที่ Docker สร้างมาเยอะๆ ไม่เอา)
 airflow/logs/
 logs/
 
-# Ignore Airflow PID/State files (ไฟล์สถานะการทำงาน)
+# Ignore Airflow PID/State files 
 airflow-webserver.pid
 airflow.db
 airflow.cfg
 
-# Ignore Database Data (ถ้ามีการ Map Volume ออกมาเก็บข้อมูล DB)
+# Ignore Database Data
 postgres_data/
 pg_data/
 mysql_data/
 
-# ===========================
-# 4. Whitelist (บังคับให้เก็บไฟล์พวกนี้)
-# ===========================
-# ! หมายถึง "ห้าม ignore" (เก็บไว้)
+# 4. Whitelist
 
-# เก็บ Docker config
+# Docker config
 !docker-compose.yaml
 !dockerfile
 !Dockerfile
 
-# เก็บ DAGs ทั้งหมด
+# All DAGs
 !airflow/dags/
 !dags/
 
-# เก็บ Plugins (เผื่อมีโค้ด Python เสริม)
+# Plugins
 !airflow/plugins/
